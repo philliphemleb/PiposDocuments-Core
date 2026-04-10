@@ -1,0 +1,23 @@
+parameters:
+    level: max
+    paths:
+        - src
+        - tests
+    checkTooWideReturnTypesInProtectedAndPublicMethods: true
+    checkUninitializedProperties: true
+    checkBenevolentUnionTypes: true
+    checkMissingOverrideMethodAttribute: true
+    reportPossiblyNonexistentGeneralArrayOffset: true
+    reportPossiblyNonexistentConstantArrayOffset: true
+    reportAlwaysTrueInLastCondition: true
+    reportAnyTypeWideningInVarTag: true
+    symfony:
+        containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
+        consoleApplicationLoader: tests/console-application.php
+    doctrine:
+        objectManagerLoader: tests/object-manager.php
+    ignoreErrors:
+        # Final entities are fully supported in Doctrine ORM 3.x+
+        -
+            identifier: doctrine.finalEntity
+            reportUnmatched: false

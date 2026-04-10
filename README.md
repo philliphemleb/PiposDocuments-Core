@@ -1,60 +1,69 @@
-# Symfony Docker
+# PipoDocuments — Core API
 
-A [Docker](https://www.docker.com/)-based installer and runtime for the [Symfony](https://symfony.com) web framework,
-with [FrankenPHP](https://frankenphp.dev) and [Caddy](https://caddyserver.com/) inside!
+Symfony 8 backend for PipoDocuments, running on FrankenPHP + PostgreSQL 17 via Docker.
 
-Specially tailored for coding agents: ships with a [Dev Container](https://containers.dev/) configuration
-that lets [Claude Code](https://claude.ai/claude-code) (and other AI coding assistants) run in fully autonomous
-mode inside a sandboxed environment.
+## Requirements
 
-![CI](https://github.com/dunglas/symfony-docker/workflows/CI/badge.svg)
+- [Docker](https://docs.docker.com/get-docker/) with Compose v2.10+
+- Make
 
-## Getting Started
+## Getting started
 
-1. If not already done, [install Docker Compose](https://docs.docker.com/compose/install/) (v2.10+)
-2. Run `docker compose build --pull --no-cache` to build fresh images
-3. Run `docker compose up --wait` to set up and start a fresh Symfony project
-4. Open `https://localhost` in your favorite web browser and [accept the auto-generated TLS certificate](https://stackoverflow.com/a/15076602/1352334)
-5. Run `docker compose down --remove-orphans` to stop the Docker containers.
+```bash
+make build
+make up
+make setup
+```
 
-## Features
+The app is available at **https://localhost** — accept the self-signed TLS certificate on first visit.
 
-- Production, development and CI ready
-- Just 1 service by default
-- Super-readable configuration
-- Blazing-fast performance thanks to [the worker mode of FrankenPHP](https://frankenphp.dev/docs/worker/)
-- [Installation of extra Docker Compose services](docs/extra-services.md) with Symfony Flex
-- Automatic HTTPS (in dev and prod)
-- HTTP/3 and [Early Hints](https://symfony.com/blog/new-in-symfony-6-3-early-hints) support
-- Real-time messaging thanks to a built-in [Mercure hub](https://symfony.com/doc/current/mercure.html)
-- [Vulcain](https://vulcain.rocks) support
-- Native [XDebug](docs/xdebug.md) integration
-- [Hot Reloading](https://frankenphp.dev/docs/hot-reload/)
-- [Dev Container](https://containers.dev/) support, optimized for AI coding agents
-- [AI coding agents](docs/agents.md) with sandboxing out of the box
-- Rootless, slim production image
+On first start Docker installs Symfony, runs migrations, and waits for the database automatically. `make setup` creates and migrates the test database (run once).
 
-**Enjoy!**
+## Daily workflow
 
-## Docs
+| Command | Description |
+|---------|-------------|
+| `make up` | Start all containers (detached) |
+| `make down` | Stop all containers |
+| `make logs` | Tail live logs |
+| `make sh` | Shell into the PHP container |
+| `make bash` | Bash into the PHP container |
+| `make migrate` | Run pending Doctrine migrations |
+| `make test` | Run the full PHPUnit test suite |
+| `make setup` | Create and migrate the test database (run once after first `make up`) |
+| `make composer c='...'` | Run any Composer command inside the container |
+| `make sf c='...'` | Run any Symfony console command inside the container |
+| `make cc` | Clear the Symfony cache |
 
-1. [Options available](docs/options.md)
-2. [Using Symfony Docker with an existing project](docs/existing-project.md)
-3. [Support for extra services](docs/extra-services.md)
-4. [Deploying in production](docs/production.md)
-5. [Debugging with Xdebug](docs/xdebug.md)
-6. [TLS Certificates](docs/tls.md)
-7. [Using MySQL instead of PostgreSQL](docs/mysql.md)
-8. [Using Alpine Linux instead of Debian](docs/alpine.md)
-9. [Using a Makefile](docs/makefile.md)
-10. [Updating the template](docs/updating.md)
-11. [Troubleshooting](docs/troubleshooting.md)
-12. [Using AI Coding Agents](docs/agents.md)
+## Databases
 
-## License
+| Database | Purpose |
+|----------|---------|
+| `app` | Main development database |
+| `app_test` | Test suite — reset automatically before each test class |
 
-Symfony Docker is available under the MIT License.
+Both databases are created on first container start. Credentials for local dev are in `compose.yaml` (defaults) and can be overridden via `.env.local`.
 
-## Credits
+## Xdebug
 
-Created by [Kévin Dunglas](https://dunglas.dev), co-maintained by [Maxime Helias](https://twitter.com/maxhelias) and sponsored by [Les-Tilleuls.coop](https://les-tilleuls.coop).
+Xdebug is pre-installed in the dev image. The mode defaults to `develop` (shows improved var_dump output). To enable step debugging, set `XDEBUG_MODE=debug` in your `.env.local`:
+
+```dotenv
+XDEBUG_MODE=debug
+```
+
+Then restart the containers with `make down && make up`. Your IDE (PhpStorm, VS Code) needs to listen on port 9003. See [docs/xdebug.md](docs/xdebug.md) for full IDE setup.
+
+## Environment and credentials
+
+The `.env` file is committed and contains safe local defaults. Never put real credentials there.
+
+For local overrides, create `.env.local` (git-ignored):
+
+```dotenv
+# .env.local — never committed
+POSTGRES_PASSWORD=something_else
+DATABASE_URL="postgresql://app:something_else@127.0.0.1:5432/app?serverVersion=17&charset=utf8"
+```
+
+For staging/production, **do not use `.env` files on the server**. Instead set real environment variables on the host (via your CI/CD platform, systemd unit, or Docker run flags). Real environment variables always win over `.env` files. See the [production deployment docs](docs/production.md) for details.

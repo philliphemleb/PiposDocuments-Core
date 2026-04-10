@@ -1,0 +1,25 @@
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.pem
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+###< phpunit/phpunit ###
+
+###> phpstan ###
+/phpstan.neon
+###< phpstan ###
+
+###> friendsofphp/php-cs-fixer ###
+/.php-cs-fixer.php
+###< friendsofphp/php-cs-fixer ###
+
+###> phpstan/phpstan ###
+phpstan.neon
+###< phpstan/phpstan ###
