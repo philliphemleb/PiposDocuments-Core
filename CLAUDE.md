@@ -1,10 +1,10 @@
-# PipoDocuments — Core API
+# PiposDocuments — Core API
 
-Symfony 8 backend for PipoDocuments. PHP 8.5, FrankenPHP, PostgreSQL 17, Doctrine ORM 3.
+Symfony 8 backend for PiposDocuments. PHP 8.5, FrankenPHP, PostgreSQL 17, Doctrine ORM 3.
 
 ## Tickets
 
-Tracked in Linear, prefix `PIP-`. Project: "1.0.0 - initial release". Always check the relevant ticket before starting work.
+Tracked in Linear, prefix `PIP-`. Always check the relevant ticket before starting work.
 
 ## Running things
 
@@ -25,13 +25,49 @@ Tracked in Linear, prefix `PIP-`. Project: "1.0.0 - initial release". Always che
 
 `make help` lists all targets. Everything runs inside the `php` container.
 
+## Layer Architecture (per domain)
+
+Default architecture per domain. Present when needed, absent otherwise.
+
+```
+src/{Domain}/
+    Client/             # External API clients
+    Command/            # Symfony console commands
+    Controller/         # HTTP controllers
+        Input/          # Request DTOs with validation
+    DTO/                # Data transfer objects
+    Entity/             # Doctrine entities
+    Enum/               # PHP 8.5 enums
+    Exception/          # Domain exceptions
+    Message/            # Symfony Messenger messages
+    Model/              # Domain models
+    Repository/         # Doctrine repositories
+    Serializer/         # Serializers
+    Service/            # Business services
+    Story/              # Foundry Stories: reusable scenario builders for fixtures + tests
+    Task/               # Schedules tasks
+    ValueObject/        # Immutable value objects
+    di.php              # Domain-specific DI configuration
+```
+
+A top-level `src/Story/` also exists for cross-domain orchestration Stories
+that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`).
+
 ## Code conventions
 
 - **Strict types**: every PHP file starts with `declare(strict_types=1);`
 - **Style**: `@Symfony` + `@Symfony:risky` (PHP-CS-Fixer with `.php-cs-fixer.dist.php`)
 - **Static analysis**: PHPStan level max with extra strict rules in `phpstan.dist.neon`
 - **Native types over PHPDoc**: PHP 8.5 native types everywhere; PHPDoc only for generics like `array<int, Foo>`
-- After every code change, both must pass: `make lint-fix && make analyse`
+- After every code change, all three must pass: `make lint && make analyse && make test`
+- Constructor property promotion with `readonly` for immutable data
+- PHP 8.5 enums for fixed value sets
+- Nullable types as `?T` (not `T|null`)
+- Trailing commas in multi-line arrays and function parameters
+- Multi-line function signatures for 2+ parameters
+- Explicit boolean comparisons: `if (isset($var) === true)`
+- **Date/Time handling**: Always use `Carbon/CarbonImmutable` instead of `DateTimeImmutable`
+- **Entity IDs**: UUID v7 via Symfony UID component
 
 ## Composer / Symfony Flex
 
@@ -46,19 +82,40 @@ Tracked in Linear, prefix `PIP-`. Project: "1.0.0 - initial release". Always che
 - Test DB used automatically when `APP_ENV=test` via Doctrine's `dbname_suffix` in `config/packages/doctrine.yaml`
 - Local password: `localdevpassword` (defined in `compose.yaml` with safe defaults)
 - Never put real credentials in `.env`. Use `.env.local` for local overrides, real environment variables for staging/prod
+- Always use `IF NOT EXISTS` and `IF EXISTS` in migrations
+- `messenger_messages` is owned by Symfony Messenger's Doctrine transport, not by an entity. It is excluded from ORM diffs via `schema_filter` in `config/packages/doctrine.yaml` and managed by a hand-written migration
+
+## Messenger
+
+- `async` transport: Redis (`redis://redis:6379/messages`) — see the `redis` service in `compose.yaml`
+- `failed` transport: Doctrine on Postgres (`messenger_messages` table) — durable, SQL-queryable dead letter
+- Run a worker locally with `make sf c='messenger:consume async -vv'`
+- Inspect failed messages: `make sf c='messenger:failed:show'`, retry: `messenger:failed:retry`, drop: `messenger:failed:remove`
+- The Redis transport requires `ext-redis` (installed in the FrankenPHP `Dockerfile` via `install-php-extensions redis`); `predis` does **not** satisfy `symfony/redis-messenger`
 
 ## Tests
 
 - Run via `make test`
-- Test database is reset between test classes (once Foundry is installed in PIP-26)
+- PHPUnit 13 with DAMA DoctrineTestBundle for database isolation
+- Each test runs inside a transaction that is rolled back on completion (via `dama/doctrine-test-bundle`), so DB state never leaks between tests
+- DDL statements inside a test (`ALTER TABLE`, `CREATE TABLE`, `TRUNCATE`, etc.) implicitly commit and break that isolation — avoid them, or opt the test out
+- Messenger tests use `Zenstruck\Messenger\Test\InteractsWithMessenger` — both `async` and `failed` transports are routed to the in-memory `test://` transport in the test environment, so Redis and Postgres are never touched by message dispatches in tests
 - First time: run `make setup` to create the test DB and migrate it
+
+## Test structure
+
+- `tests/Setup/{Context}`               # Helper files for specific context (PHPStan, ...)
+- `tests/Unit/{Domain}/`                # Unit tests split by domain
+- `tests/Integration/`                  # Possible Integration test that does not fit in a single domain
+- `tests/Integration/{Domain}/`         # Integration tests split by domain
+- `tests/Integration/Mock/`             # WireMock helpers (mappings, files, service wrapper, ...)
 
 ## PHPStan bootstrap files
 
 PHPStan needs Symfony container + Doctrine entity manager metadata. These are wired via:
 
-- `tests/console-application.php` — boots kernel, returns `Application` (for command analysis)
-- `tests/object-manager.php` — boots kernel, returns Doctrine `EntityManager` (for DQL + entity analysis)
+- `tests/Setup/PHPStan/console-application.php` — boots kernel, returns `Application` (for command analysis)
+- `tests/Setup/PHPStan/object-manager.php` — boots kernel, returns Doctrine `EntityManager` (for DQL + entity analysis)
 - `var/cache/dev/App_KernelDevDebugContainer.xml` — auto-generated by `bin/console cache:warmup`
 
 If PHPStan complains the container XML is missing, run `make sf c='cache:warmup --env=dev'` first.
@@ -67,6 +124,3 @@ If PHPStan complains the container XML is missing, run `make sf c='cache:warmup 
 
 - **Never bypass `make`** and call `docker compose` directly unless debugging Make itself
 - **Never add PHPStan ignore rules preemptively** — only add them when a real warning fires. Use `reportUnmatched: false` per-rule only when you know the rule will become relevant later (e.g. `doctrine.finalEntity`)
-- **Never edit Symfony Flex-managed sections** (between `###> recipe-name ###` markers) by hand unless you understand what the recipe does
-- **Never commit `.env.local`** or any file with real credentials
-- **Never use `--no-verify`** or otherwise skip pre-commit hooks

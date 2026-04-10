@@ -13,9 +13,12 @@
         "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3.6.3",
         "symfony/console": "8.0.*",
+        "symfony/doctrine-messenger": "8.0.*",
         "symfony/dotenv": "8.0.*",
         "symfony/flex": "^2.10",
         "symfony/framework-bundle": "8.0.*",
+        "symfony/messenger": "8.0.*",
+        "symfony/redis-messenger": "8.0.*",
         "symfony/runtime": "8.0.*",
         "symfony/yaml": "8.0.*"
     },
@@ -78,10 +81,16 @@
         }
     },
     "require-dev": {
+        "dama/doctrine-test-bundle": "^8.6",
         "friendsofphp/php-cs-fixer": ">=3.94.2",
         "phpstan/extension-installer": ">=1.4.3",
         "phpstan/phpstan": ">=2.1.46",
         "phpstan/phpstan-doctrine": ">=2.0.20",
-        "phpstan/phpstan-symfony": ">=2.0.15"
+        "phpstan/phpstan-symfony": ">=2.0.15",
+        "phpunit/phpunit": "^13.1",
+        "symfony/browser-kit": "8.0.*",
+        "symfony/css-selector": "8.0.*",
+        "zenstruck/foundry": "^2.9",
+        "zenstruck/messenger-test": "^1.14"
     }
 }

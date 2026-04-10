@@ -13,9 +13,9 @@ parameters:
     reportAnyTypeWideningInVarTag: true
     symfony:
         containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
-        consoleApplicationLoader: tests/console-application.php
+        consoleApplicationLoader: tests/Setup/PHPStan/console-application.php
     doctrine:
-        objectManagerLoader: tests/object-manager.php
+        objectManagerLoader: tests/Setup/PHPStan/object-manager.php
     ignoreErrors:
         # Final entities are fully supported in Doctrine ORM 3.x+
         -

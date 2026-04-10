@@ -1,6 +1,6 @@
-# PipoDocuments — Core API
+# PiposDocuments — Core API
 
-Symfony 8 backend for PipoDocuments, running on FrankenPHP + PostgreSQL 17 via Docker.
+Symfony 8 backend for PiposDocuments, running on FrankenPHP + PostgreSQL 17 via Docker.
 
 ## Requirements
 

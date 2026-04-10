@@ -4,9 +4,14 @@
 # Files in the packages/ subdirectory configure your dependencies.
 # See also https://symfony.com/doc/current/service_container/import.html
 
+imports:
+    # Per-domain DI configuration: src/{Domain}/di.php is picked up automatically.
+    # Domains without a di.php are silently skipped (glob with no matches is not an error).
+    - { resource: '../src/*/di.php' }
+
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
-parameters:
+parameters: {}
 
 services:
     # default configuration for services in *this* file

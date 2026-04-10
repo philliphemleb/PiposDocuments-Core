@@ -32,3 +32,7 @@ services:
     ports:
       - "5432"
 ###< doctrine/doctrine-bundle ###
+
+  redis:
+    ports:
+      - "6379"

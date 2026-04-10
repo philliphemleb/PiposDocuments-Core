@@ -6,9 +6,9 @@ use App\Kernel;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Dotenv\Dotenv;
 
-require \dirname(__DIR__) . '/vendor/autoload.php';
+require \dirname(__DIR__, 3) . '/vendor/autoload.php';
 
-new Dotenv()->bootEnv(\dirname(__DIR__) . '/.env');
+new Dotenv()->bootEnv(\dirname(__DIR__, 3) . '/.env');
 
 $env = $_SERVER['APP_ENV'] ?? 'dev';
 \assert(\is_string($env));
