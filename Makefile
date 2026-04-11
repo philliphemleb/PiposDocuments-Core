@@ -11,7 +11,7 @@ SYMFONY  = $(PHP) bin/console
 
 # Misc
 .DEFAULT_GOAL = help
-.PHONY        : help build up start down logs sh bash composer vendor sf cc migrate test setup analyse lint lint-fix
+.PHONY        : help build up start down logs sh bash composer vendor sf cc migrate test setup analyse lint lint-fix rector rector-fix
 
 ## —— 🎵 🐳 The Symfony Docker Makefile 🐳 🎵 ——————————————————————————————————
 help: ## Outputs this help screen
@@ -77,3 +77,9 @@ lint: ## Check code style with PHP-CS-Fixer (dry run)
 
 lint-fix: ## Auto-fix code style with PHP-CS-Fixer
 	@$(COMPOSER) lint:fix
+
+rector: ## Run Rector in dry-run mode (CI-mode — fails if any change would be made)
+	@$(COMPOSER) rector
+
+rector-fix: ## Apply Rector refactorings to the codebase
+	@$(COMPOSER) rector:fix

@@ -76,6 +76,9 @@ jobs:
       - name: Run PHP-CS-Fixer
         run: make lint
 
+      - name: Run Rector (dry-run)
+        run: make rector
+
       - name: Security Audit
         run: docker compose exec -T php composer audit
 
