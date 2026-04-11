@@ -91,7 +91,6 @@ that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`)
 - `failed` transport: Doctrine on Postgres (`messenger_messages` table) — durable, SQL-queryable dead letter
 - Run a worker locally with `make sf c='messenger:consume async -vv'`
 - Inspect failed messages: `make sf c='messenger:failed:show'`, retry: `messenger:failed:retry`, drop: `messenger:failed:remove`
-- The Redis transport requires `ext-redis` (installed in the FrankenPHP `Dockerfile` via `install-php-extensions redis`); `predis` does **not** satisfy `symfony/redis-messenger`
 
 ## Tests
 

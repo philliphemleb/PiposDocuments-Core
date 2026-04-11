@@ -5,75 +5,69 @@ on:
   push:
     branches:
       - main
+  release:
+    types: [released]
   pull_request: ~
   workflow_dispatch: ~
 
 permissions:
   contents: read
+  packages: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  tests:
-    name: Tests
+  build:
+    name: Build Docker Images
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-      - name: Build Docker images
-        uses: docker/bake-action@v7
+
+      - name: Set up stack (write cache)
+        uses: ./.github/actions/setup-stack
         with:
-          pull: true
-          load: true
-          source: .
-          files: |
-            compose.yaml
-            compose.override.yaml
-          set: |
-            *.cache-from=type=gha,scope=${{github.ref}}
-            *.cache-from=type=gha,scope=refs/heads/main
-            *.cache-to=type=gha,scope=${{github.ref}},mode=max
-      - name: Start services
-        run: docker compose up --wait --no-build
-      - name: Check HTTP reachability
-        run: curl -v --fail-with-body http://localhost
-      # Uncomment when the homepage is configured, or change the path to check
-      # - name: Check HTTPS reachability
-      #   run: curl -v --insecure --fail-with-body https://localhost
-      - name: Check Mercure reachability
-        run: curl -vI --insecure --fail-with-body https://localhost/.well-known/mercure?topic=test
-      # Uncomment if Doctrine ORM is installed
-      # - name: Create test database
-      #   run: docker compose exec -T php bin/console -e test doctrine:database:create
-      # Uncomment if Doctrine Migrations is installed
-      # - name: Run migrations
-      #   run: docker compose exec -T php bin/console -e test doctrine:migrations:migrate --no-interaction
-      # Uncomment if PHPUnit is installed
-      # - name: Run PHPUnit
-      #   run: docker compose exec -T php bin/phpunit
-      # Uncomment if Doctrine ORM is installed
-      # - name: Doctrine Schema Validator
-      #   run: docker compose exec -T php bin/console -e test doctrine:schema:validate
-  lint:
-    name: Lint
+          cache-to: "true"
+
+      - name: Warm up cache
+        run: docker compose exec -T php bin/console cache:warmup --env=dev
+
+  static-analysis:
+    name: Static Analysis & Security
     runs-on: ubuntu-latest
+    needs: build
     permissions:
       contents: read
       packages: read
       statuses: write
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v6
         with:
+          # super-linter needs full history to diff against the base branch
           fetch-depth: 0
           persist-credentials: false
-      - name: Lint Code Base
+
+      - name: Set up stack
+        uses: ./.github/actions/setup-stack
+
+      - name: Warm up cache
+        run: docker compose exec -T php bin/console cache:warmup --env=dev
+
+      - name: Run PHPStan
+        run: make analyse
+
+      - name: Run PHP-CS-Fixer
+        run: make lint
+
+      - name: Security Audit
+        run: docker compose exec -T php composer audit
+
+      - name: Lint non-PHP files (super-linter)
         uses: super-linter/super-linter/slim@v8
         env:
           GITHUB_ACTIONS_CONFIG_FILE: actionlint.yaml
@@ -82,3 +76,107 @@ jobs:
           VALIDATE_TRIVY: false
           VALIDATE_BIOME_FORMAT: false
           VALIDATE_BIOME_LINT: false
+          # PHP is already covered by PHPStan + PHP-CS-Fixer above.
+          # super-linter ships an older PHP without ext-xml, which can't load this project.
+          VALIDATE_PHP: false
+          VALIDATE_PHP_BUILTIN: false
+          VALIDATE_PHP_PHPCS: false
+          VALIDATE_PHP_PHPSTAN: false
+          VALIDATE_PHP_PSALM: false
+
+  tests:
+    name: Tests & Coverage
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up stack
+        uses: ./.github/actions/setup-stack
+
+      - name: Check HTTP reachability
+        run: curl -v --fail-with-body http://localhost
+
+      # TODO: enable when first /api endpoint exists (PIP-27+)
+      # - name: Check HTTPS reachability
+      #   run: curl -v --insecure --fail-with-body https://localhost/api
+
+      - name: Check Mercure reachability
+        run: curl -vI --insecure --fail-with-body https://localhost/.well-known/mercure?topic=test
+
+      - name: Set up test database
+        run: make setup
+
+      # TODO: enable after first entity exists (PIP-27+) — fails with no mappings
+      # - name: Doctrine Schema Validator
+      #   run: docker compose exec -T php bin/console -e test doctrine:schema:validate
+
+      - name: Run PHPUnit with Coverage
+        id: phpunit
+        run: docker compose exec -T -e XDEBUG_MODE=coverage php bin/phpunit --coverage-text --coverage-html=coverage-html
+
+      - name: Copy Coverage Report
+        if: success() || failure()
+        run: docker compose cp php:/app/coverage-html ./coverage-html || echo "No coverage report generated"
+
+      - name: Upload Coverage Report
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-html/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Upload Test Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: var/log/
+          retention-days: 7
+
+  push-image:
+    name: Push Docker Image to GHCR
+    runs-on: ubuntu-latest
+    needs: [build, static-analysis, tests]
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/philliphemleb/piposdocuments-core
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+
+      - name: Build and push production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: frankenphp_prod
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{github.ref}}
+          cache-to: type=gha,scope=${{github.ref}},mode=max
