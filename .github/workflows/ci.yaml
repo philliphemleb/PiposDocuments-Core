@@ -63,6 +63,24 @@ jobs:
       - name: Run gitleaks
         run: gitleaks detect --source . --config .gitleaks.toml --baseline-path .gitleaks-baseline.json --redact --verbose
 
+  semgrep:
+    name: Security Scan (Semgrep)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/php
+            p/symfony
+            p/owasp-top-ten
+            p/security-audit
+
   build:
     name: Build Docker Images
     runs-on: ubuntu-latest
