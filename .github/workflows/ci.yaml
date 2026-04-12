@@ -72,14 +72,11 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install Semgrep
+        run: pip install semgrep
+
       - name: Run Semgrep
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: >-
-            p/php
-            p/symfony
-            p/owasp-top-ten
-            p/security-audit
+        run: semgrep scan --config p/php --config p/owasp-top-ten --config p/security-audit --error
 
   build:
     name: Build Docker Images
