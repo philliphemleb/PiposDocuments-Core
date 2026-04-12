@@ -19,7 +19,7 @@ return new PhpCsFixer\Config()
         'global_namespace_import' => [
             'import_classes' => true,
             'import_constants' => true,
-            'import_functions' => true,
+            'import_functions' => false,
         ],
         'ordered_imports' => ['sort_algorithm' => 'alpha'],
         'no_unused_imports' => true,
