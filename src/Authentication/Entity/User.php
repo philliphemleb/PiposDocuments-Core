@@ -28,10 +28,10 @@ class User implements UserInterface
     public private(set) string $email;
 
     #[ORM\Column(type: 'string', enumType: UserRole::class)]
-    public UserRole $role;
+    public private(set) UserRole $role;
 
     #[ORM\Column(type: 'string', enumType: UserStatus::class)]
-    public UserStatus $status;
+    public private(set) UserStatus $status;
 
     #[ORM\Column(type: 'carbon_immutable')]
     public private(set) CarbonImmutable $createdAt;
