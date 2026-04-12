@@ -85,6 +85,15 @@ that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`)
 - Always use `IF NOT EXISTS` and `IF EXISTS` in migrations
 - `messenger_messages` is owned by Symfony Messenger's Doctrine transport, not by an entity. It is excluded from ORM diffs via `schema_filter` in `config/packages/doctrine.yaml` and managed by a hand-written migration
 
+## Secrets
+
+- **APP_SECRET lives in the Symfony secrets vault**, not in `.env`. Never put it back into `.env` or `.env.local`.
+- Dev vault: `config/secrets/dev/` — fully committed, including `dev.decrypt.private.php`. The dev key is shared by design (Symfony Flex recipe default): it's a personal-repo convenience so checkouts just work.
+- Prod vault: `config/secrets/prod/` — `prod.decrypt.private.pem` is gitignored (see `.gitignore`). In prod, either ship the decrypt key out-of-band or set the secret as a real env var (env vars win over vault values).
+- Test env uses the literal `APP_SECRET='$ecretf0rt3st'` in `.env.test` because Symfony skips `.env.local` and the vault isn't loaded in test mode.
+- **Generate/rotate a secret**: `make sf c='secrets:set APP_SECRET --random'` (works for any secret name — never hand-roll with `openssl`).
+- **List**: `make sf c='secrets:list --reveal'`. **Remove**: `make sf c='secrets:remove NAME'`.
+
 ## Messenger
 
 - `async` transport: Redis (`redis://redis:6379/messages`) — see the `redis` service in `compose.yaml`
