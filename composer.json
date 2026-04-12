@@ -9,9 +9,12 @@
         "php": ">=8.5.3",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "carbonphp/carbon-doctrine-types": "^3.2",
         "doctrine/doctrine-bundle": "^3.2.2",
         "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3.6.3",
+        "lexik/jwt-authentication-bundle": "^3.2",
+        "nesbot/carbon": "^3.11",
         "sentry/sentry-symfony": "^5.10",
         "symfony/console": "8.0.*",
         "symfony/doctrine-messenger": "8.0.*",
@@ -21,6 +24,9 @@
         "symfony/messenger": "8.0.*",
         "symfony/redis-messenger": "8.0.*",
         "symfony/runtime": "8.0.*",
+        "symfony/security-bundle": "8.0.*",
+        "symfony/uid": "8.0.*",
+        "symfony/validator": "8.0.*",
         "symfony/yaml": "8.0.*"
     },
     "config": {
@@ -96,6 +102,7 @@
         "roave/security-advisories": "dev-latest",
         "symfony/browser-kit": "8.0.*",
         "symfony/css-selector": "8.0.*",
+        "symfony/maker-bundle": "^1.67",
         "zenstruck/foundry": "^2.9",
         "zenstruck/messenger-test": "^1.14"
     }
