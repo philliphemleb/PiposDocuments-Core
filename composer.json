@@ -96,6 +96,7 @@
         "roave/security-advisories": "dev-latest",
         "symfony/browser-kit": "8.0.*",
         "symfony/css-selector": "8.0.*",
+        "symfony/maker-bundle": "^1.67",
         "zenstruck/foundry": "^2.9",
         "zenstruck/messenger-test": "^1.14"
     }
