@@ -11,7 +11,7 @@ SYMFONY  = $(PHP) bin/console
 
 # Misc
 .DEFAULT_GOAL = help
-.PHONY        : help build up start down logs sh bash composer vendor sf cc migrate test setup analyse lint lint-fix rector rector-fix
+.PHONY        : help build up start down logs sh bash composer vendor sf cc migrate test setup analyse lint lint-fix rector rector-fix hooks
 
 ## —— 🎵 🐳 The Symfony Docker Makefile 🐳 🎵 ——————————————————————————————————
 help: ## Outputs this help screen
@@ -21,7 +21,7 @@ help: ## Outputs this help screen
 build: ## Builds the Docker images
 	@$(DOCKER_COMP) build --pull --no-cache
 
-up: ## Start the docker hub in detached mode (no logs)
+up: hooks ## Start the docker hub in detached mode (no logs)
 	@$(DOCKER_COMP) up --detach
 
 start: build up ## Build and start the containers
@@ -83,3 +83,8 @@ rector: ## Run Rector in dry-run mode (CI-mode — fails if any change would be 
 
 rector-fix: ## Apply Rector refactorings to the codebase
 	@$(COMPOSER) rector:fix
+
+## —— Git Hooks 🪝 ————————————————————————————————————————————————————————————
+hooks: ## Install git hooks from .githooks/
+	@git config core.hooksPath .githooks
+	@echo "Git hooks installed (.githooks/)"

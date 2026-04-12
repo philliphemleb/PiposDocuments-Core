@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Only run when PHP files are staged.
+STAGED_PHP=$(git diff --cached --name-only --diff-filter=ACM -- '*.php')
+if [ -z "$STAGED_PHP" ]; then
+    exit 0
+fi
+
+echo "==> pre-commit: checking code style..."
+make lint
+echo ""
+
+echo "==> pre-commit: running static analysis..."
+make analyse
