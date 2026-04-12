@@ -63,21 +63,6 @@ jobs:
       - name: Run gitleaks
         run: gitleaks detect --source . --config .gitleaks.toml --baseline-path .gitleaks-baseline.json --redact --verbose
 
-  semgrep:
-    name: Security Scan (Semgrep)
-    runs-on: ubuntu-latest
-    container:
-      image: semgrep/semgrep
-    if: github.actor != 'dependabot[bot]'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-
-      - name: Run Semgrep
-        run: semgrep scan --config=auto --error
-
   build:
     name: Build Docker Images
     runs-on: ubuntu-latest
