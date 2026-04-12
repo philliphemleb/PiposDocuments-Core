@@ -1,0 +1,45 @@
+---
+name: Gemini PR Review
+
+on:
+  pull_request:
+    types: [ready_for_review, synchronize]
+
+jobs:
+  gemini-review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run Gemini CLI PR Review
+        uses: google-github-actions/run-gemini-cli@v0
+        with:
+          version: latest
+          prompt: |
+            You are reviewing a pull request as a senior developer.
+            First, read the CLAUDE.md file in the root of this repository carefully.
+            It contains the project's architecture rules, coding guidelines, and conventions.
+            Apply those rules strictly when reviewing.
+
+            Review the git diff of PR #${{ github.event.pull_request.number }}.
+            Focus on:
+            - Violations of the architecture or conventions defined in CLAUDE.md
+            - Logic bugs or edge cases
+            - Security issues
+            - Symfony best practices
+            - Code that doesn't match the existing project style
+
+            Post inline comments on specific lines where you find issues.
+            Be concise and constructive.
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -69,6 +69,20 @@ that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`)
 - **Date/Time handling**: Always use `Carbon/CarbonImmutable` instead of `DateTimeImmutable`
 - **Entity IDs**: UUID v7 via Symfony UID component
 
+## Code Review Guidelines
+
+- All business logic must live in Domain Services, never in Controllers
+- Symfony controllers must be thin — no direct Doctrine calls
+- Use constructor injection only, never container fetching
+- New API endpoints must be documented with API Platform attributes
+
+### When to write which test
+
+- **Unit tests** (`tests/Unit/{Domain}/`): Services, ValueObjects, Enums, Models, DTOs with logic — anything testable in isolation without booting the kernel
+- **Integration tests** (`tests/Integration/{Domain}/`): Controllers (via `WebTestCase`), Repository queries, Messenger handlers, anything that touches the database or external services
+- Trivial getters, setters, and constructor-only classes do not need dedicated tests — they are covered implicitly by the tests that use them
+- New classes containing business logic must have corresponding tests
+
 ## Composer / Symfony Flex
 
 - Always require packages **inside the container**: `make composer c='req some/package'`
