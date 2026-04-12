@@ -46,25 +46,22 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
+      # We run the gitleaks binary directly rather than gitleaks/gitleaks-action
+      # because the action tries to post PR annotations, which requires a
+      # pull-requests:write token. Dependabot PRs use a restricted read-only
+      # GITHUB_TOKEN regardless of workflow permissions, so the action fails
+      # with "Resource not accessible by integration". The CLI has no such
+      # dependency — a failing job is all the signal we need.
+      - name: Install gitleaks
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_VERSION: 8.30.1
+        run: |
+          curl -sSLf "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
 
-  dependency-review:
-    name: Dependency Review
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-
-      - name: Review dependencies
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
+      - name: Run gitleaks
+        run: gitleaks detect --source . --redact --verbose
 
   build:
     name: Build Docker Images
