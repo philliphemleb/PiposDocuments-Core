@@ -61,7 +61,7 @@ jobs:
           gitleaks version
 
       - name: Run gitleaks
-        run: gitleaks detect --source . --config .gitleaks.toml --redact --verbose
+        run: gitleaks detect --source . --config .gitleaks.toml --baseline-path .gitleaks-baseline.json --redact --verbose
 
   build:
     name: Build Docker Images

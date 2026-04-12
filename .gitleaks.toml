@@ -1,0 +1,17 @@
+# Gitleaks configuration — extends the default ruleset.
+# Docs: https://github.com/gitleaks/gitleaks#configuration
+[extend]
+useDefault = true
+
+# Global allowlist applied on top of the default rules.
+[allowlist]
+description = "Symfony dev vault — committed by convention"
+
+# The dev secrets vault (config/secrets/dev/) contains the Sodium keypair
+# and encrypted secrets for the dev environment. By Symfony Flex convention
+# the dev decrypt key is committed so checkouts just work. These files look
+# like secrets to gitleaks because they literally are — but they're dev-only
+# and committed by design.
+paths = [
+  '''^config/secrets/dev/''',
+]

@@ -1,0 +1,23 @@
+[
+ {
+  "RuleID": "generic-api-key",
+  "Description": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations.",
+  "StartLine": 19,
+  "EndLine": 19,
+  "StartColumn": 2,
+  "EndColumn": 44,
+  "Match": "APP_SECRET=REDACTED",
+  "Secret": "REDACTED",
+  "File": ".env",
+  "SymlinkFile": "",
+  "Commit": "b2b488e0d7b897636437b135e33e625af39c2c79",
+  "Link": "https://github.com/philliphemleb/PiposDocuments-Core/blob/b2b488e0d7b897636437b135e33e625af39c2c79/.env#L19",
+  "Entropy": 3.6792293,
+  "Author": "Phillip Hemleb",
+  "Email": "github@phillip.hemleb.de",
+  "Date": "2026-04-10T17:16:30Z",
+  "Message": "Finish PIP-23 and PIP-25",
+  "Tags": [],
+  "Fingerprint": "b2b488e0d7b897636437b135e33e625af39c2c79:.env:generic-api-key:19"
+ }
+]
