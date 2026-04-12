@@ -17,6 +17,16 @@ updates:
       prefix: "chore"
     cooldown:
       default-days: 7
+    open-pull-requests-limit: 10
+    groups:
+      symfony:
+        patterns: ["symfony/*"]
+      doctrine:
+        patterns: ["doctrine/*"]
+      phpstan:
+        patterns: ["phpstan/*"]
+      phpunit:
+        patterns: ["phpunit/*", "dama/*", "zenstruck/*"]
 
   - package-ecosystem: github-actions
     directory: /
@@ -26,3 +36,6 @@ updates:
       prefix: "chore"
     cooldown:
       default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]

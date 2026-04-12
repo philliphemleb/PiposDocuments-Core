@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Kernel;
-use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\Bundle\DoctrineBundle\Registry;
 use Symfony\Component\Dotenv\Dotenv;
 
 require \dirname(__DIR__, 3) . '/vendor/autoload.php';
@@ -18,7 +18,7 @@ $debug = filter_var($_SERVER['APP_DEBUG'] ?? '0', \FILTER_VALIDATE_BOOLEAN);
 $kernel = new Kernel($env, $debug);
 $kernel->boot();
 
-/** @var ManagerRegistry $doctrine */
+/** @var Registry $doctrine */
 $doctrine = $kernel->getContainer()->get('doctrine');
 
 return $doctrine->getManager();

@@ -123,3 +123,15 @@ If PHPStan complains the container XML is missing, run `make sf c='cache:warmup 
 
 - **Never bypass `make`** and call `docker compose` directly unless debugging Make itself
 - **Never add PHPStan ignore rules preemptively** — only add them when a real warning fires. Use `reportUnmatched: false` per-rule only when you know the rule will become relevant later (e.g. `doctrine.finalEntity`)
+
+## Future tooling to revisit
+
+Tracked here so it doesn't get lost between sessions.
+
+- **Architecture enforcement (Deptrac or PHPat)** — currently deferred. The layer architecture in "Layer Architecture (per domain)" above is enforced only by convention. Once `src/` reaches **2+ domains** with real cross-domain boundaries, add one of:
+  - [Deptrac](https://github.com/qossmic/deptrac) — standalone analyzer, rules in `deptrac.yaml`, new CI step.
+  - [PHPat](https://github.com/carlosas/phpat) — PHPStan extension, rules in PHP, runs inside existing `make analyse` with zero new CI overhead.
+  PHPat is the cheaper path in; Deptrac is more mature. Decide when the need is real, not preemptively.
+- **Doctrine schema validator in CI** — currently commented out in `.github/workflows/ci.yaml` waiting for the first entity (PIP-27+). Re-enable as soon as one entity exists.
+- **HTTPS `/api` health check in CI** — same file, same trigger (first `/api` endpoint).
+- **Mutation testing (Infection)** — valuable but slow; add as a weekly scheduled workflow, not per-PR, once the test suite is substantial enough to make the signal worthwhile.
