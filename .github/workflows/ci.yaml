@@ -66,17 +66,17 @@ jobs:
   semgrep:
     name: Security Scan (Semgrep)
     runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    if: github.actor != 'dependabot[bot]'
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
           persist-credentials: false
 
-      - name: Install Semgrep
-        run: pip install semgrep
-
       - name: Run Semgrep
-        run: semgrep scan --config p/php --config p/owasp-top-ten --config p/security-audit --error
+        run: semgrep scan --config=auto --error
 
   build:
     name: Build Docker Images
