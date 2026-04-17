@@ -21,3 +21,8 @@ parameters:
         -
             identifier: doctrine.finalEntity
             reportUnmatched: false
+        # PHPUnit setUp() always runs before test methods, but PHPStan doesn't track this
+        -
+            identifier: property.uninitialized
+            paths:
+                - tests/*

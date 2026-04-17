@@ -7,6 +7,7 @@ namespace App\Authentication\Entity;
 use App\Authentication\Enum\UserRole;
 use App\Authentication\Enum\UserStatus;
 use App\Authentication\Repository\UserRepository;
+use App\Infrastructure\AuditLog\Entity\AuditableEntityStateInterface;
 use Carbon\CarbonImmutable;
 use Doctrine\ORM\Mapping as ORM;
 use Override;
@@ -17,8 +18,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'users')]
 #[ORM\HasLifecycleCallbacks]
-class User implements UserInterface
+class User implements UserInterface, AuditableEntityStateInterface
 {
+    #[Override]
     #[ORM\Id]
     #[ORM\Column(type: 'uuid')]
     public private(set) Uuid $id;
@@ -80,5 +82,24 @@ class User implements UserInterface
     public function getRoles(): array
     {
         return ['ROLE_' . $this->role->name];
+    }
+
+    /**
+     * @return list<string>
+     */
+    #[Override]
+    public function getAuditableFields(): array
+    {
+        return ['status'];
+    }
+
+    public function changeStatus(UserStatus $status): void
+    {
+        $this->status = $status;
+    }
+
+    public function changeEmail(string $email): void
+    {
+        $this->email = $email;
     }
 }
