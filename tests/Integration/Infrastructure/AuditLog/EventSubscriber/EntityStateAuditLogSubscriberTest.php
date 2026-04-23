@@ -14,6 +14,7 @@ use Override;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Workflow\WorkflowInterface;
 
 final class EntityStateAuditLogSubscriberTest extends KernelTestCase
 {
@@ -23,6 +24,8 @@ final class EntityStateAuditLogSubscriberTest extends KernelTestCase
 
     private AuditLogContext $auditLogContext;
 
+    private WorkflowInterface $userStatusWorkflow;
+
     #[Override]
     protected function setUp(): void
     {
@@ -31,6 +34,7 @@ final class EntityStateAuditLogSubscriberTest extends KernelTestCase
         $this->em = self::getContainer()->get(EntityManagerInterface::class);
         $this->auditLogRepository = self::getContainer()->get(EntityStateAuditLogRepository::class);
         $this->auditLogContext = self::getContainer()->get(AuditLogContext::class);
+        $this->userStatusWorkflow = self::getContainer()->get('state_machine.user_status');
     }
 
     #[Override]
@@ -49,7 +53,7 @@ final class EntityStateAuditLogSubscriberTest extends KernelTestCase
 
         $this->auditLogContext->setContext('TestWorker', 'automated test');
 
-        $user->changeStatus(UserStatus::LOCKED);
+        $this->userStatusWorkflow->apply($user, 'lock');
         $this->em->persist($user);
         $this->em->flush();
 
@@ -73,7 +77,7 @@ final class EntityStateAuditLogSubscriberTest extends KernelTestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        $user->changeStatus(UserStatus::LOCKED);
+        $this->userStatusWorkflow->apply($user, 'lock');
         $this->em->persist($user);
         $this->em->flush();
 
@@ -131,8 +135,8 @@ final class EntityStateAuditLogSubscriberTest extends KernelTestCase
 
         $this->auditLogContext->setContext('BatchWorker', 'batch processing');
 
-        $user1->changeStatus(UserStatus::LOCKED);
-        $user2->changeStatus(UserStatus::BANNED);
+        $this->userStatusWorkflow->apply($user1, 'lock');
+        $this->userStatusWorkflow->apply($user2, 'ban');
         $this->em->persist($user1);
         $this->em->persist($user2);
         $this->em->flush();

@@ -27,13 +27,19 @@ class User implements UserInterface, AuditableEntityStateInterface
 
     #[Assert\NotBlank]
     #[ORM\Column(length: 255, unique: true)]
-    public private(set) string $email;
+    public private(set) string $email {
+        set(string $value) => $this->email = mb_strtolower(trim($value));
+    }
 
     #[ORM\Column(type: 'string', enumType: UserRole::class)]
     public private(set) UserRole $role;
 
     #[ORM\Column(type: 'string', enumType: UserStatus::class)]
-    public private(set) UserStatus $status;
+    public private(set) UserStatus $status {
+        set(string|UserStatus $value) => $this->status = $value instanceof UserStatus
+            ? $value
+            : UserStatus::from($value);
+    }
 
     #[ORM\Column(type: 'carbon_immutable')]
     public private(set) CarbonImmutable $createdAt;
@@ -93,7 +99,12 @@ class User implements UserInterface, AuditableEntityStateInterface
         return ['status'];
     }
 
-    public function changeStatus(UserStatus $status): void
+    public function getStatus(): UserStatus
+    {
+        return $this->status;
+    }
+
+    public function setStatus(string $status): void
     {
         $this->status = $status;
     }

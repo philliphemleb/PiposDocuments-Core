@@ -68,6 +68,7 @@ that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`)
 - Explicit boolean comparisons: `if (isset($var) === true)`
 - **Date/Time handling**: Always use `Carbon/CarbonImmutable` instead of `DateTimeImmutable`
 - **Entity IDs**: UUID v7 via Symfony UID component
+- **Property hooks (PHP 8.4)**: use `get`/`set` hooks on entity properties for type coercion and value normalisation. The `set` hook parameter may be wider than the property type (e.g. `string|UserStatus` on a `UserStatus` property) to accept raw input and convert it. Combine with asymmetric visibility (`public private(set)`) so the hook fires only from within the class. Example: `set(string|UserStatus $v) => $this->status = $v instanceof UserStatus ? $v : UserStatus::from($v);`
 
 ## Code Review Guidelines
 

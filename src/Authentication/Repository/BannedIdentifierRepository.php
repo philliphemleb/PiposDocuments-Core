@@ -17,4 +17,9 @@ class BannedIdentifierRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, BannedIdentifier::class);
     }
+
+    public function findOneByEmail(string $email): ?BannedIdentifier
+    {
+        return $this->findOneBy(['email' => mb_strtolower(trim($email))]);
+    }
 }

@@ -13,8 +13,7 @@ framework:
             failed: 'doctrine://default?queue_name=failed&auto_setup=0'
 
         routing:
-            # Route your messages to the transports
-            # 'App\Message\YourMessage': async
+            App\Authentication\Message\SendVerificationEmailMessage: async
 
 when@test:
     framework:

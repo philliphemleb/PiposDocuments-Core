@@ -1,0 +1,40 @@
+framework:
+    workflows:
+        user_status:
+            type: state_machine
+            marking_store:
+                type: method
+                property: status
+            supports:
+                - App\Authentication\Entity\User
+            initial_marking: unverified_email
+            places:
+                - unverified_email
+                - to_be_verified_email
+                - active
+                - locked
+                - banned
+                - to_be_unlocked
+                - to_be_deleted
+            transitions:
+                request_email_verification:
+                    from: unverified_email
+                    to:   to_be_verified_email
+                verify_email:
+                    from: to_be_verified_email
+                    to:   active
+                lock:
+                    from: active
+                    to:   locked
+                schedule_unlock:
+                    from: locked
+                    to:   to_be_unlocked
+                unlock:
+                    from: to_be_unlocked
+                    to:   active
+                ban:
+                    from: [active, locked]
+                    to:   banned
+                schedule_deletion:
+                    from: [banned, locked, unverified_email]
+                    to:   to_be_deleted
