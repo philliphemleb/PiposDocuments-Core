@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
 
       - name: Run Gemini CLI PR Review
-        uses: google-github-actions/run-gemini-cli@v0.1.21
+        uses: google-github-actions/run-gemini-cli@v0.1.22
         with:
           version: latest
           prompt: |
