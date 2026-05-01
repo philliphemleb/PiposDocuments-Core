@@ -32,13 +32,13 @@ readonly class ResendVerificationEmailService
     {
         $user = $this->userRepository->findOneByEmail($email);
 
-        if ($user === null || $user->status !== UserStatus::UNVERIFIED_EMAIL) {
+        if (null === $user || UserStatus::UNVERIFIED_EMAIL !== $user->status) {
             throw new FailedResendException(FailedResendReason::UserNotEligible);
         }
 
         $token = $this->tokenRepository->findValidTokenForUser($user);
 
-        if ($token === null) {
+        if (null === $token) {
             throw new FailedResendException(FailedResendReason::TokenExpired);
         }
 

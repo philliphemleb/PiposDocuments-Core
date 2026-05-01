@@ -43,7 +43,7 @@ class AuthenticationController extends AbstractController
         try {
             $resendService->resend($input->email);
         } catch (FailedResendException $e) {
-            $status = $e->reason === FailedResendReason::MaxAttemptsReached
+            $status = FailedResendReason::MaxAttemptsReached === $e->reason
                 ? Response::HTTP_TOO_MANY_REQUESTS
                 : Response::HTTP_UNPROCESSABLE_ENTITY;
 

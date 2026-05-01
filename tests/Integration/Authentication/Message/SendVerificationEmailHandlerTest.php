@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Authentication\Message;
 
+use App\Authentication\Entity\EmailVerificationToken;
+use App\Authentication\Entity\User;
 use App\Authentication\Message\SendVerificationEmailHandler;
 use App\Authentication\Message\SendVerificationEmailMessage;
+use Carbon\CarbonImmutable;
 use Override;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -27,6 +30,19 @@ final class SendVerificationEmailHandlerTest extends KernelTestCase
     #[Test]
     public function handlerSendsEmailToRecipient(): void
     {
+        $em = self::getContainer()->get('doctrine')->getManager();
+
+        $user = new User(email: 'verify@example.com');
+        $em->persist($user);
+
+        $token = new EmailVerificationToken(
+            user: $user,
+            token: 'abc123testtoken',
+            expiresAt: CarbonImmutable::now()->addDay(),
+        );
+        $em->persist($token);
+        $em->flush();
+
         ($this->handler)(new SendVerificationEmailMessage(
             email: 'verify@example.com',
             token: 'abc123testtoken',

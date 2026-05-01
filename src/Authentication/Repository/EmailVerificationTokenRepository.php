@@ -27,7 +27,8 @@ class EmailVerificationTokenRepository extends ServiceEntityRepository
 
     public function findValidTokenForUser(User $user): ?EmailVerificationToken
     {
-        return $this->createQueryBuilder('t')
+        /** @var EmailVerificationToken|null $result */
+        $result = $this->createQueryBuilder('t')
             ->where('t.user = :user')
             ->andWhere('t.expiresAt > :now')
             ->setParameter('user', $user)
@@ -35,6 +36,8 @@ class EmailVerificationTokenRepository extends ServiceEntityRepository
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
+
+        return $result;
     }
 
     /**

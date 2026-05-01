@@ -11,6 +11,7 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 use Symfony\Component\Mime\Email;
+use Throwable;
 
 #[AsMessageHandler]
 readonly class SendVerificationEmailHandler
@@ -28,7 +29,7 @@ readonly class SendVerificationEmailHandler
     {
         $token = $this->tokenRepository->findOneByToken($message->token);
 
-        if ($token === null || $token->sentAt !== null) {
+        if (null === $token || null !== $token->sentAt) {
             return;
         }
 
@@ -43,11 +44,8 @@ readonly class SendVerificationEmailHandler
 
         try {
             $this->mailer->send($email);
-        } catch (\Throwable $e) {
-            throw new UnrecoverableMessageHandlingException(
-                \sprintf('Failed to send verification email to %s: %s', $message->email, $e->getMessage()),
-                previous: $e,
-            );
+        } catch (Throwable $e) {
+            throw new UnrecoverableMessageHandlingException(\sprintf('Failed to send verification email to %s: %s', $message->email, $e->getMessage()), previous: $e);
         }
 
         $token->markAsSent();

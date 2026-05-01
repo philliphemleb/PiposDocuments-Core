@@ -25,6 +25,9 @@ final class Version20260420174635 extends AbstractMigration
                 token VARCHAR(64) NOT NULL,
                 expires_at TIMESTAMP(6) WITHOUT TIME ZONE NOT NULL,
                 created_at TIMESTAMP(6) WITHOUT TIME ZONE NOT NULL,
+                dispatched_at TIMESTAMP(6) WITHOUT TIME ZONE,
+                sent_at TIMESTAMP(6) WITHOUT TIME ZONE,
+                send_attempts INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY(id)
             )
             SQL);

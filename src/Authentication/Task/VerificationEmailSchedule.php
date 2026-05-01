@@ -4,17 +4,19 @@ declare(strict_types=1);
 
 namespace App\Authentication\Task;
 
+use Override;
 use Symfony\Component\Scheduler\Attribute\AsSchedule;
 use Symfony\Component\Scheduler\RecurringMessage;
 use Symfony\Component\Scheduler\Schedule;
 use Symfony\Component\Scheduler\ScheduleProviderInterface;
 
-#[AsSchedule]
+#[AsSchedule('verification_emails')]
 readonly class VerificationEmailSchedule implements ScheduleProviderInterface
 {
+    #[Override]
     public function getSchedule(): Schedule
     {
-        return (new Schedule())->add(
+        return new Schedule()->add(
             RecurringMessage::every('15 minutes', new DispatchPendingVerificationEmailsTask()),
         );
     }
