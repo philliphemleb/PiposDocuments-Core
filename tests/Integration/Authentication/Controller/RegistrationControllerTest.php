@@ -24,8 +24,8 @@ final class RegistrationControllerTest extends WebTestCase
         $client->request(
             method: 'POST',
             uri: '/api/register',
-            content: (string) json_encode(['email' => 'newuser@example.com']),
             server: ['CONTENT_TYPE' => 'application/json'],
+            content: (string) json_encode(['email' => 'newuser@example.com']),
         );
 
         self::assertResponseStatusCodeSame(201);
@@ -50,8 +50,8 @@ final class RegistrationControllerTest extends WebTestCase
         $client->request(
             method: 'POST',
             uri: '/api/register',
-            content: (string) json_encode(['email' => 'existing@example.com']),
             server: ['CONTENT_TYPE' => 'application/json'],
+            content: (string) json_encode(['email' => 'existing@example.com']),
         );
 
         self::assertResponseStatusCodeSame(422);
@@ -71,8 +71,8 @@ final class RegistrationControllerTest extends WebTestCase
         $client->request(
             method: 'POST',
             uri: '/api/register',
-            content: (string) json_encode(['email' => 'banned@example.com']),
             server: ['CONTENT_TYPE' => 'application/json'],
+            content: (string) json_encode(['email' => 'banned@example.com']),
         );
 
         self::assertResponseStatusCodeSame(422);
@@ -87,8 +87,8 @@ final class RegistrationControllerTest extends WebTestCase
         $client->request(
             method: 'POST',
             uri: '/api/register',
-            content: (string) json_encode(['email' => 'not-an-email']),
             server: ['CONTENT_TYPE' => 'application/json'],
+            content: (string) json_encode(['email' => 'not-an-email']),
         );
 
         self::assertResponseStatusCodeSame(422);
@@ -102,8 +102,8 @@ final class RegistrationControllerTest extends WebTestCase
         $client->request(
             method: 'POST',
             uri: '/api/register',
-            content: (string) json_encode([]),
             server: ['CONTENT_TYPE' => 'application/json'],
+            content: (string) json_encode([]),
         );
 
         self::assertResponseStatusCodeSame(422);

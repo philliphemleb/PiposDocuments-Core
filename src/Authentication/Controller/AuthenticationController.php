@@ -42,8 +42,8 @@ class AuthenticationController extends AbstractController
     ): JsonResponse {
         try {
             $resendService->resend($input->email);
-        } catch (FailedResendException $e) {
-            $status = FailedResendReason::MaxAttemptsReached === $e->reason
+        } catch (FailedResendException $failedResendException) {
+            $status = FailedResendReason::MaxAttemptsReached === $failedResendException->reason
                 ? Response::HTTP_TOO_MANY_REQUESTS
                 : Response::HTTP_UNPROCESSABLE_ENTITY;
 

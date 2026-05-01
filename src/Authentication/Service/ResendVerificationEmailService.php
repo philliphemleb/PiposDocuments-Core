@@ -32,13 +32,13 @@ readonly class ResendVerificationEmailService
     {
         $user = $this->userRepository->findOneByEmail($email);
 
-        if (null === $user || UserStatus::UNVERIFIED_EMAIL !== $user->status) {
+        if (!$user instanceof \App\Authentication\Entity\User || UserStatus::UNVERIFIED_EMAIL !== $user->status) {
             throw new FailedResendException(FailedResendReason::UserNotEligible);
         }
 
         $token = $this->tokenRepository->findValidTokenForUser($user);
 
-        if (null === $token) {
+        if (!$token instanceof \App\Authentication\Entity\EmailVerificationToken) {
             throw new FailedResendException(FailedResendReason::TokenExpired);
         }
 
@@ -51,10 +51,10 @@ readonly class ResendVerificationEmailService
                 email: $user->email,
                 token: $token->token,
             ));
-        } catch (TransportException $e) {
+        } catch (TransportException $transportException) {
             $this->logger->error('Failed to dispatch resend verification email', [
                 'email' => $email,
-                'exception' => $e->getMessage(),
+                'exception' => $transportException->getMessage(),
             ]);
 
             return;
@@ -62,6 +62,7 @@ readonly class ResendVerificationEmailService
 
         $token->incrementSendAttempts();
         $token->markAsDispatched();
+
         $this->em->flush();
     }
 }

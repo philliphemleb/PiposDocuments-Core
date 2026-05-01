@@ -99,6 +99,7 @@ final class EntityStateAuditLogSubscriberTest extends KernelTestCase
         ]);
 
         $user->changeEmail('changed@example.com');
+
         $this->em->persist($user);
         $this->em->flush();
 
@@ -137,6 +138,7 @@ final class EntityStateAuditLogSubscriberTest extends KernelTestCase
 
         $this->userStatusWorkflow->apply($user1, 'lock');
         $this->userStatusWorkflow->apply($user2, 'ban');
+
         $this->em->persist($user1);
         $this->em->persist($user2);
         $this->em->flush();

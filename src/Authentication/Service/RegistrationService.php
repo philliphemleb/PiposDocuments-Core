@@ -32,11 +32,11 @@ readonly class RegistrationService
 
     public function register(string $email): void
     {
-        if (null !== $this->bannedIdentifierRepository->findOneByEmail($email)) {
+        if ($this->bannedIdentifierRepository->findOneByEmail($email) instanceof \App\Authentication\Entity\BannedIdentifier) {
             throw new FailedRegistrationException(FailedRegistrationReason::EmailBanned);
         }
 
-        if (null !== $this->userRepository->findOneByEmail($email)) {
+        if ($this->userRepository->findOneByEmail($email) instanceof User) {
             throw new FailedRegistrationException(FailedRegistrationReason::EmailAlreadyRegistered);
         }
 
@@ -63,10 +63,10 @@ readonly class RegistrationService
             ));
             $token->markAsDispatched();
             $this->em->flush();
-        } catch (TransportException $e) {
+        } catch (TransportException $transportException) {
             $this->logger->error('Failed to dispatch verification email after registration; scheduler will retry', [
                 'email' => $email,
-                'exception' => $e->getMessage(),
+                'exception' => $transportException->getMessage(),
             ]);
         }
     }

@@ -29,7 +29,7 @@ readonly class SendVerificationEmailHandler
     {
         $token = $this->tokenRepository->findOneByToken($message->token);
 
-        if (null === $token || null !== $token->sentAt) {
+        if (!$token instanceof \App\Authentication\Entity\EmailVerificationToken || $token->sentAt instanceof \Carbon\CarbonImmutable) {
             return;
         }
 
@@ -44,8 +44,8 @@ readonly class SendVerificationEmailHandler
 
         try {
             $this->mailer->send($email);
-        } catch (Throwable $e) {
-            throw new UnrecoverableMessageHandlingException(\sprintf('Failed to send verification email to %s: %s', $message->email, $e->getMessage()), previous: $e);
+        } catch (Throwable $throwable) {
+            throw new UnrecoverableMessageHandlingException(\sprintf('Failed to send verification email to %s: %s', $message->email, $throwable->getMessage()), (int) $throwable->getCode(), previous: $throwable);
         }
 
         $token->markAsSent();
