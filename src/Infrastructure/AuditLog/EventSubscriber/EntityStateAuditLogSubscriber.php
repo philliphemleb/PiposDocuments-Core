@@ -8,11 +8,12 @@ use App\Infrastructure\AuditLog\Entity\AuditableEntityStateInterface;
 use App\Infrastructure\AuditLog\Entity\EntityStateAuditLog;
 use App\Infrastructure\AuditLog\Service\AuditLogContext;
 use BackedEnum;
+use DateTimeInterface;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
 use Doctrine\ORM\Event\OnFlushEventArgs;
-use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
+use Stringable;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 #[AsDoctrineListener(event: 'onFlush')]
@@ -77,14 +78,26 @@ readonly class EntityStateAuditLogSubscriber
 
     private function stringifyValue(mixed $value): string
     {
+        if (null === $value) {
+            return 'null';
+        }
+
         if ($value instanceof BackedEnum) {
             return (string) $value->value;
         }
 
-        if (\is_string($value)) {
-            return $value;
+        if ($value instanceof DateTimeInterface) {
+            return $value->format(DateTimeInterface::ATOM);
         }
 
-        throw new InvalidArgumentException(\sprintf('Expected BackedEnum or string, got %s', get_debug_type($value)));
+        if (\is_bool($value)) {
+            return true === $value ? 'true' : 'false';
+        }
+
+        if (\is_scalar($value) || $value instanceof Stringable) {
+            return (string) $value;
+        }
+
+        return get_debug_type($value);
     }
 }
