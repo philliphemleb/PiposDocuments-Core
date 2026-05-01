@@ -12,7 +12,6 @@ use DateTimeInterface;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Psr\Log\LoggerInterface;
-use ReflectionClass;
 use Stringable;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
@@ -48,7 +47,7 @@ readonly class EntityStateAuditLogSubscriber
                 $newState = $this->stringifyValue($changeSet[$field][1]);
 
                 $auditLog = new EntityStateAuditLog(
-                    entityType: new ReflectionClass($entity)->getShortName(),
+                    entityType: $entity::class,
                     entityId: $entity->id,
                     oldState: $oldState,
                     newState: $newState,
@@ -64,7 +63,7 @@ readonly class EntityStateAuditLogSubscriber
 
                 $this->auditLogger->info(\sprintf(
                     '[%s] %s %s: %s -> %s (by %s, reason: %s)',
-                    new ReflectionClass($entity)->getShortName(),
+                    $entity::class,
                     $entity->id->toRfc4122(),
                     $field,
                     $oldState,

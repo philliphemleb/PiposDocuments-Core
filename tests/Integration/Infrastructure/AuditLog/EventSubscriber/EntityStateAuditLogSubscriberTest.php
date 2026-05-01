@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Infrastructure\AuditLog\EventSubscriber;
 
+use App\Authentication\Entity\User;
 use App\Authentication\Enum\UserStatus;
 use App\Authentication\Story\UserStory;
 use App\Infrastructure\AuditLog\Entity\EntityStateAuditLog;
@@ -62,7 +63,7 @@ final class EntityStateAuditLogSubscriberTest extends KernelTestCase
         self::assertCount(1, $auditLogs);
         $log = $auditLogs[0] ?? self::fail('Expected audit log entry');
 
-        self::assertSame('User', $log->entityType);
+        self::assertSame(User::class, $log->entityType);
         self::assertSame($user->id->toRfc4122(), $log->entityId->toRfc4122());
         self::assertSame('active', $log->oldState);
         self::assertSame('locked', $log->newState);
