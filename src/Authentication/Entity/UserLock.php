@@ -58,13 +58,6 @@ class UserLock
         $this->updatedAt = CarbonImmutable::now();
     }
 
-    #[ORM\PrePersist]
-    public function initTimestamps(): void
-    {
-        $this->createdAt = CarbonImmutable::now();
-        $this->updatedAt = CarbonImmutable::now();
-    }
-
     #[ORM\PreUpdate]
     public function touchUpdatedAt(): void
     {
