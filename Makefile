@@ -11,7 +11,7 @@ SYMFONY  = $(PHP) bin/console
 
 # Misc
 .DEFAULT_GOAL = help
-.PHONY        : help build up start down logs sh bash composer vendor sf cc migrate test setup analyse lint lint-fix rector rector-fix hooks
+.PHONY        : help build up start down logs sh bash composer vendor sf cc migrate migrate-fresh test setup analyse lint lint-fix rector rector-fix hooks
 
 ## —— 🎵 🐳 The Symfony Docker Makefile 🐳 🎵 ——————————————————————————————————
 help: ## Outputs this help screen
@@ -62,6 +62,13 @@ migrate: ## Run Doctrine migrations
 setup: ## Create the test database and run migrations against it (run once after first make up)
 	@$(SYMFONY) doctrine:database:create --env=test --if-not-exists
 	@$(SYMFONY) doctrine:migrations:migrate --env=test --no-interaction --all-or-nothing
+
+migrate-fresh: ## Roll all migrations back and re-apply them (dev + test DBs)
+	@$(SYMFONY) doctrine:migrations:migrate 0 --no-interaction --allow-no-migration
+	@$(SYMFONY) doctrine:migrations:migrate --no-interaction --all-or-nothing
+	@$(SYMFONY) doctrine:migrations:migrate 0 --no-interaction --allow-no-migration --env=test
+	@$(SYMFONY) doctrine:migrations:migrate --no-interaction --all-or-nothing --env=test
+	@echo "Dev and test databases re-migrated."
 
 ## —— Tests 🧪 —————————————————————————————————————————————————————————————————
 test: ## Run the test suite, pass the parameter "c=" to add phpunit options, example: make test c="--group e2e"
