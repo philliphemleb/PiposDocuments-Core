@@ -19,8 +19,10 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-readonly class RegistrationService
+final readonly class RegistrationService
 {
+    public const int VERIFICATION_TOKEN_EXPIRY_MINUTES = 60;
+
     public function __construct(
         private EntityManagerInterface $em,
         private MessageBusInterface $bus,
@@ -44,7 +46,7 @@ readonly class RegistrationService
         $token = new EmailVerificationToken(
             user: $user,
             token: bin2hex(random_bytes(32)),
-            expiresAt: CarbonImmutable::now()->addHours(1),
+            expiresAt: CarbonImmutable::now()->addMinutes(self::VERIFICATION_TOKEN_EXPIRY_MINUTES),
         );
 
         $this->em->persist($user);
@@ -60,6 +62,7 @@ readonly class RegistrationService
             $this->bus->dispatch(new SendVerificationEmailMessage(
                 email: $user->email,
                 token: $token->token,
+                expiresInMinutes: self::VERIFICATION_TOKEN_EXPIRY_MINUTES,
             ));
             $token->markAsDispatched();
 

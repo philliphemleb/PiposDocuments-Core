@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Authentication\Service;
 
+use App\Authentication\Entity\EmailVerificationToken;
 use App\Authentication\Enum\FailedResendReason;
 use App\Authentication\Enum\UserStatus;
 use App\Authentication\Exception\FailedResendException;
@@ -38,7 +39,7 @@ readonly class ResendVerificationEmailService
 
         $token = $this->tokenRepository->findValidTokenForUser($user);
 
-        if (!$token instanceof \App\Authentication\Entity\EmailVerificationToken) {
+        if (!$token instanceof EmailVerificationToken) {
             throw new FailedResendException(FailedResendReason::TokenExpired);
         }
 
@@ -50,6 +51,7 @@ readonly class ResendVerificationEmailService
             $this->bus->dispatch(new SendVerificationEmailMessage(
                 email: $user->email,
                 token: $token->token,
+                expiresInMinutes: RegistrationService::VERIFICATION_TOKEN_EXPIRY_MINUTES,
             ));
         } catch (TransportException $transportException) {
             $this->logger->error('Failed to dispatch resend verification email', [

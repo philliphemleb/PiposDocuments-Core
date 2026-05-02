@@ -18,7 +18,7 @@ use Throwable;
 use Twig\Environment;
 
 #[AsMessageHandler]
-readonly class SendVerificationEmailHandler
+final readonly class SendVerificationEmailHandler
 {
     public function __construct(
         private MailerInterface $mailer,
@@ -44,20 +44,7 @@ readonly class SendVerificationEmailHandler
             'token' => $message->token,
         ]);
 
-        $html = $this->twig->render('emails/verification/body.html.twig', [
-            'token' => $message->token,
-            'app_url' => $this->appUrl,
-        ]);
-
-        $email = new Email()
-            ->to($message->email)
-            ->subject('Verify your PiposDocuments email')
-            ->html($html)
-            ->text(\sprintf(
-                "Click the link below to verify your email address:\n\n%s/verify-email?token=%s\n\nThis link will expire in 24 hours.",
-                $this->appUrl,
-                $message->token,
-            ));
+        $email = $this->getEmailTemplate($message);
 
         try {
             $this->mailer->send($email);
@@ -76,5 +63,30 @@ readonly class SendVerificationEmailHandler
 
         $token->markAsSent();
         $this->em->flush();
+    }
+
+    private function getEmailTemplate(SendVerificationEmailMessage $message): Email
+    {
+        $expiryText = match (true) {
+            $message->expiresInMinutes >= 60 && 0 === $message->expiresInMinutes % 60 => \sprintf('%d hour(s)', $message->expiresInMinutes / 60),
+            default => \sprintf('%d minutes', $message->expiresInMinutes),
+        };
+
+        $html = $this->twig->render('emails/verification/body.html.twig', [
+            'token' => $message->token,
+            'app_url' => $this->appUrl,
+            'expires_in_minutes' => $message->expiresInMinutes,
+        ]);
+
+        return new Email()
+            ->to($message->email)
+            ->subject('Verify your PiposDocuments email')
+            ->html($html)
+            ->text(\sprintf(
+                "Click the link below to verify your email address:\n\n%s/verify-email?token=%s\n\nThis link will expire in %s.",
+                $this->appUrl,
+                $message->token,
+                $expiryText,
+            ));
     }
 }

@@ -6,6 +6,7 @@ namespace App\Authentication\Task;
 
 use App\Authentication\Message\SendVerificationEmailMessage;
 use App\Authentication\Repository\EmailVerificationTokenRepository;
+use App\Authentication\Service\RegistrationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -32,6 +33,7 @@ readonly class DispatchPendingVerificationEmailsHandler
                 $this->bus->dispatch(new SendVerificationEmailMessage(
                     email: $token->user->email,
                     token: $token->token,
+                    expiresInMinutes: RegistrationService::VERIFICATION_TOKEN_EXPIRY_MINUTES,
                 ));
                 $token->markAsDispatched();
             } catch (TransportException $e) {

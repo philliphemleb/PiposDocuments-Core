@@ -46,6 +46,7 @@ final class SendVerificationEmailHandlerTest extends KernelTestCase
         ($this->handler)(new SendVerificationEmailMessage(
             email: 'verify@example.com',
             token: 'abc123testtoken',
+            expiresInMinutes: 60,
         ));
 
         self::assertEmailCount(1);
