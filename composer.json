@@ -1,8 +1,8 @@
 {
-    "name": "symfony/skeleton",
+    "name": "philliphemleb/piposdocuments-core",
     "type": "project",
-    "license": "MIT",
-    "description": "A minimal Symfony project recommended to create bare bones applications",
+    "license": "PolyForm-Noncommercial-1.0.0"
+    "description": "The core business logic project for PiposDocuments, a document and project-documentation management tool",
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
