@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Authentication\Message;
 
+use App\Authentication\Entity\EmailVerificationToken;
 use App\Authentication\Repository\EmailVerificationTokenRepository;
+use Carbon\CarbonImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mailer\MailerInterface;
@@ -29,7 +31,7 @@ readonly class SendVerificationEmailHandler
     {
         $token = $this->tokenRepository->findOneByToken($message->token);
 
-        if (!$token instanceof \App\Authentication\Entity\EmailVerificationToken || $token->sentAt instanceof \Carbon\CarbonImmutable) {
+        if (!$token instanceof EmailVerificationToken || $token->sentAt instanceof CarbonImmutable) {
             return;
         }
 

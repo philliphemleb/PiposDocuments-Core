@@ -44,7 +44,7 @@ readonly class RegistrationService
         $token = new EmailVerificationToken(
             user: $user,
             token: bin2hex(random_bytes(32)),
-            expiresAt: CarbonImmutable::now()->addHours(24),
+            expiresAt: CarbonImmutable::now()->addHours(1),
         );
 
         $this->em->persist($user);
@@ -62,6 +62,7 @@ readonly class RegistrationService
                 token: $token->token,
             ));
             $token->markAsDispatched();
+
             $this->em->flush();
         } catch (TransportException $transportException) {
             $this->logger->error('Failed to dispatch verification email after registration; scheduler will retry', [
