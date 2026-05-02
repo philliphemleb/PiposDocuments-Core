@@ -2,6 +2,7 @@ monolog:
     channels:
         - deprecation
         - audit_log
+        - messenger
 
 when@dev:
     monolog:
@@ -20,6 +21,11 @@ when@dev:
                 path: "%kernel.logs_dir%/AuditLog.log"
                 level: info
                 channels: [audit_log]
+            messenger:
+                type: console
+                process_psr_3_messages: true
+                level: info
+                channels: [messenger]
 
 when@test:
     monolog:
@@ -39,6 +45,11 @@ when@test:
                 path: "%kernel.logs_dir%/AuditLog.log"
                 level: info
                 channels: [audit_log]
+            messenger:
+                type: console
+                process_psr_3_messages: true
+                level: info
+                channels: [messenger]
 
 when@prod:
     monolog:

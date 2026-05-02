@@ -8,12 +8,14 @@ use App\Authentication\Entity\EmailVerificationToken;
 use App\Authentication\Repository\EmailVerificationTokenRepository;
 use Carbon\CarbonImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 use Symfony\Component\Mime\Email;
 use Throwable;
+use Twig\Environment;
 
 #[AsMessageHandler]
 readonly class SendVerificationEmailHandler
@@ -24,6 +26,8 @@ readonly class SendVerificationEmailHandler
         private string $appUrl,
         private EmailVerificationTokenRepository $tokenRepository,
         private EntityManagerInterface $em,
+        private Environment $twig,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -35,18 +39,38 @@ readonly class SendVerificationEmailHandler
             return;
         }
 
+        $this->logger->info('Sending verification email', [
+            'email' => $message->email,
+            'token' => $message->token,
+        ]);
+
+        $html = $this->twig->render('emails/verification/body.html.twig', [
+            'token' => $message->token,
+            'app_url' => $this->appUrl,
+        ]);
+
         $email = new Email()
             ->to($message->email)
             ->subject('Verify your PiposDocuments email')
+            ->html($html)
             ->text(\sprintf(
-                "Click the link below to verify your email address:\n\n%s/verify-email?token=%s",
+                "Click the link below to verify your email address:\n\n%s/verify-email?token=%s\n\nThis link will expire in 24 hours.",
                 $this->appUrl,
                 $message->token,
             ));
 
         try {
             $this->mailer->send($email);
+            $this->logger->info('Verification email sent successfully', [
+                'email' => $message->email,
+                'token' => $message->token,
+            ]);
         } catch (Throwable $throwable) {
+            $this->logger->error('Failed to send verification email', [
+                'email' => $message->email,
+                'token' => $message->token,
+                'error' => $throwable->getMessage(),
+            ]);
             throw new UnrecoverableMessageHandlingException(\sprintf('Failed to send verification email to %s: %s', $message->email, $throwable->getMessage()), (int) $throwable->getCode(), previous: $throwable);
         }
 

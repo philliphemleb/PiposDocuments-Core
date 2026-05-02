@@ -1,0 +1,26 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block title %}Verify your email address{% endblock %}
+
+{% block content %}
+    <h1>Verify your email address</h1>
+
+    <p>Welcome to PiposDocuments! Click the button below to verify your email address and complete your registration.</p>
+
+    <p style="text-align: center;">
+        <a href="{{ app_url }}/verify-email?token={{ token }}" class="button">
+            Verify Email
+        </a>
+    </p>
+
+    <p>Or copy and paste this link into your browser:</p>
+    <p style="word-break: break-all; font-size: 12px; color: #666;">
+        {{ app_url }}/verify-email?token={{ token }}
+    </p>
+
+    <p>This link will expire in 24 hours.</p>
+
+    <p style="font-size: 12px; color: #666; margin-top: 30px;">
+        If you didn't create an account with PiposDocuments, you can safely ignore this email.
+    </p>
+{% endblock %}
