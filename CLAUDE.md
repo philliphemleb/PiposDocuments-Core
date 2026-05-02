@@ -100,6 +100,17 @@ that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`)
 - Always use `IF NOT EXISTS` and `IF EXISTS` in migrations
 - `messenger_messages` is owned by Symfony Messenger's Doctrine transport, not by an entity. It is excluded from ORM diffs via `schema_filter` in `config/packages/doctrine.yaml` and managed by a hand-written migration
 
+## Routing & API endpoints
+
+- All API routes are prefixed `/api` automatically via `config/routes.yaml` (`prefix: /api`). Controllers should use `#[Route('/foo')]`, **not** `#[Route('/api/foo')]` — Symfony adds the prefix
+- Public endpoints (no JWT required) must be added to `access_control` in `config/packages/security.yaml` **before** the catch-all `^/api` rule — otherwise the JWT firewall intercepts them
+- After adding a new route or controller, FrankenPHP worker mode requires:
+  ```bash
+  make sf c='cache:clear' && docker compose restart php
+  ```
+  Files are loaded once at worker startup; `cache:clear` alone isn't enough
+- Health check: `GET /api/health` → `{"status":"ok"}` (lives in `src/Infrastructure/Health/Controller/`)
+
 ## Secrets
 
 - **APP_SECRET lives in the Symfony secrets vault**, not in `.env`. Never put it back into `.env` or `.env.local`.
@@ -152,10 +163,4 @@ If PHPStan complains the container XML is missing, run `make sf c='cache:warmup 
 
 Tracked here so it doesn't get lost between sessions.
 
-- **Architecture enforcement (Deptrac or PHPat)** — currently deferred. The layer architecture in "Layer Architecture (per domain)" above is enforced only by convention. Once `src/` reaches **2+ domains** with real cross-domain boundaries, add one of:
-  - [Deptrac](https://github.com/qossmic/deptrac) — standalone analyzer, rules in `deptrac.yaml`, new CI step.
-  - [PHPat](https://github.com/carlosas/phpat) — PHPStan extension, rules in PHP, runs inside existing `make analyse` with zero new CI overhead.
-  PHPat is the cheaper path in; Deptrac is more mature. Decide when the need is real, not preemptively.
-- **Doctrine schema validator in CI** — currently commented out in `.github/workflows/ci.yaml` waiting for the first entity (PIP-27+). Re-enable as soon as one entity exists.
-- **HTTPS `/api` health check in CI** — same file, same trigger (first `/api` endpoint).
 - **Mutation testing (Infection)** — valuable but slow; add as a weekly scheduled workflow, not per-PR, once the test suite is substantial enough to make the signal worthwhile.
