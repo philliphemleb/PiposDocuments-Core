@@ -60,6 +60,7 @@ that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`)
 - **Static analysis**: PHPStan level max with extra strict rules in `phpstan.dist.neon`
 - **Native types over PHPDoc**: PHP 8.5 native types everywhere; PHPDoc only for generics like `array<int, Foo>`
 - After every code change, all three must pass: `make lint && make analyse && make test`
+- **Classes**: default to `final readonly class`, only change if extension is needed
 - Constructor property promotion with `readonly` for immutable data
 - PHP 8.5 enums for fixed value sets
 - Nullable types as `?T` (not `T|null`)
