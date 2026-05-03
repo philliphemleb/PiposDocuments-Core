@@ -72,11 +72,13 @@ migrate: ## Run Doctrine migrations (ENV=all for both dev and test)
 setup: ## Setups database and run migrations against it (run once after first make up)
 	@if [ -z "$(ENV)" ]; then \
     	echo ">> Setups test database"; \
+    	$(SYMFONY) doctrine:database:drop --env=test --if-exists; \
     	$(SYMFONY) doctrine:database:create --env=test --if-not-exists; \
     	$(SYMFONY) doctrine:migrations:migrate 0 --no-interaction --allow-no-migration --env=test; \
 		$(SYMFONY) doctrine:migrations:migrate --no-interaction --all-or-nothing --env=test; \
 	else \
 		echo ">> Setups $(ENV) database"; \
+		$(SYMFONY) doctrine:database:drop --env=$(ENV) --if-exists; \
 		$(SYMFONY) doctrine:database:create --env=$(ENV) --if-not-exists; \
 		$(SYMFONY) doctrine:migrations:migrate 0 --no-interaction --allow-no-migration --env=$(ENV); \
 		$(SYMFONY) doctrine:migrations:migrate --no-interaction --all-or-nothing --env=$(ENV); \
