@@ -11,6 +11,7 @@ use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: EntityStateAuditLogRepository::class)]
 #[ORM\Table(name: 'entity_state_audit_logs')]
+#[ORM\Index(name: 'idx_entity_state_audit_log_entity', columns: ['entity_type', 'entity_id'])]
 #[ORM\HasLifecycleCallbacks]
 class EntityStateAuditLog
 {

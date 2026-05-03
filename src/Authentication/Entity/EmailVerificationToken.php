@@ -33,7 +33,7 @@ class EmailVerificationToken
     #[ORM\Column(type: 'carbon_immutable', nullable: true)]
     public private(set) ?CarbonImmutable $sentAt = null;
 
-    #[ORM\Column]
+    #[ORM\Column(options: ['default' => 0])]
     public private(set) int $sendAttempts = 0;
 
     #[ORM\Column(type: 'carbon_immutable')]
