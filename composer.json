@@ -1,7 +1,7 @@
 {
     "name": "philliphemleb/piposdocuments-core",
     "type": "project",
-    "license": "PolyForm-Noncommercial-1.0.0"
+    "license": "PolyForm-Noncommercial-1.0.0",
     "description": "The core business logic project for PiposDocuments, a document and project-documentation management tool",
     "minimum-stability": "stable",
     "prefer-stable": true,
