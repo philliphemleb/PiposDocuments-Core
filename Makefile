@@ -56,19 +56,31 @@ cc: c=c:c ## Clear the cache
 cc: sf
 
 ## —— Database 🗄️ ——————————————————————————————————————————————————————————————
-migrate: ## Run Doctrine migrations
-	@$(SYMFONY) doctrine:migrations:migrate --no-interaction --all-or-nothing
+migrate: ## Run Doctrine migrations (ENV=all for both dev and test)
+	@if [ "$(ENV)" = "all" ]; then \
+		echo ">> Migrating dev database"; \
+		$(SYMFONY) doctrine:migrations:migrate --no-interaction --all-or-nothing --env=dev; \
+		echo ">> Migrating test database"; \
+		$(SYMFONY) doctrine:migrations:migrate --no-interaction --all-or-nothing --env=test; \
+	elif [ -z "$(ENV)" ]; then \
+		$(SYMFONY) doctrine:migrations:migrate --no-interaction --all-or-nothing; \
+	else \
+		echo ">> Migrating $(ENV) database"; \
+		$(SYMFONY) doctrine:migrations:migrate --no-interaction --all-or-nothing --env=$(ENV); \
+	fi
 
-setup: ## Create the test database and run migrations against it (run once after first make up)
-	@$(SYMFONY) doctrine:database:create --env=test --if-not-exists
-	@$(SYMFONY) doctrine:migrations:migrate --env=test --no-interaction --all-or-nothing
-
-migrate-fresh: ## Roll all migrations back and re-apply them (dev + test DBs)
-	@$(SYMFONY) doctrine:migrations:migrate 0 --no-interaction --allow-no-migration
-	@$(SYMFONY) doctrine:migrations:migrate --no-interaction --all-or-nothing
-	@$(SYMFONY) doctrine:migrations:migrate 0 --no-interaction --allow-no-migration --env=test
-	@$(SYMFONY) doctrine:migrations:migrate --no-interaction --all-or-nothing --env=test
-	@echo "Dev and test databases re-migrated."
+setup: ## Setups database and run migrations against it (run once after first make up)
+	@if [ -z "$(ENV)" ]; then \
+    	echo ">> Setups test database"; \
+    	$(SYMFONY) doctrine:database:create --env=test --if-not-exists; \
+    	$(SYMFONY) doctrine:migrations:migrate 0 --no-interaction --allow-no-migration --env=test; \
+		$(SYMFONY) doctrine:migrations:migrate --no-interaction --all-or-nothing --env=test; \
+	else \
+		echo ">> Setups $(ENV) database"; \
+		$(SYMFONY) doctrine:database:create --env=$(ENV) --if-not-exists; \
+		$(SYMFONY) doctrine:migrations:migrate 0 --no-interaction --allow-no-migration --env=$(ENV); \
+		$(SYMFONY) doctrine:migrations:migrate --no-interaction --all-or-nothing --env=$(ENV); \
+	fi
 
 ## —— Tests 🧪 —————————————————————————————————————————————————————————————————
 test: ## Run the test suite, pass the parameter "c=" to add phpunit options, example: make test c="--group e2e"

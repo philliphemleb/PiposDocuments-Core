@@ -38,7 +38,7 @@
         "symfony/validator": "8.0.*",
         "symfony/workflow": "8.0.*",
         "symfony/yaml": "8.0.*",
-        "twig/twig": "*"
+        "twig/twig": "^3.17"
     },
     "config": {
         "allow-plugins": {

@@ -133,14 +133,10 @@ jobs:
       - name: Check HTTP reachability
         run: curl -v --fail-with-body http://localhost
 
-      # TODO: enable when first /api endpoint exists (PIP-27+)
-      # - name: Check HTTPS reachability
-      #   run: curl -v --insecure --fail-with-body https://localhost/api
-
       - name: Check Mercure reachability
         run: curl -vI --insecure --fail-with-body https://localhost/.well-known/mercure?topic=test
 
-      - name: Set up test database
+      - name: Set up database
         run: make setup
 
       - name: Doctrine Schema Validator
