@@ -2,10 +2,6 @@
 
 Symfony 8 backend for PiposDocuments. PHP 8.5, FrankenPHP, PostgreSQL 17, Doctrine ORM 3.
 
-## Tickets
-
-Tracked in Linear, prefix `PIP-`. Always check the relevant ticket before starting work.
-
 ## Running things
 
 **Always use `make` targets** — never invoke `docker compose`, `bin/console`, or `composer` directly on the host.
@@ -78,13 +74,6 @@ that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`)
 - Use constructor injection only, never container fetching
 - New API endpoints must be documented with API Platform attributes
 
-### When to write which test
-
-- **Unit tests** (`tests/Unit/{Domain}/`): Services, ValueObjects, Enums, Models, DTOs with logic — anything testable in isolation without booting the kernel
-- **Integration tests** (`tests/Integration/{Domain}/`): Controllers (via `WebTestCase`), Repository queries, Messenger handlers, anything that touches the database or external services
-- Trivial getters, setters, and constructor-only classes do not need dedicated tests — they are covered implicitly by the tests that use them
-- New classes containing business logic must have corresponding tests
-
 ## Composer / Symfony Flex
 
 - Always require packages **inside the container**: `make composer c='req some/package'`
@@ -136,6 +125,13 @@ that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`)
 - DDL statements inside a test (`ALTER TABLE`, `CREATE TABLE`, `TRUNCATE`, etc.) implicitly commit and break that isolation — avoid them, or opt the test out
 - Messenger tests use `Zenstruck\Messenger\Test\InteractsWithMessenger` — both `async` and `failed` transports are routed to the in-memory `test://` transport in the test environment, so Redis and Postgres are never touched by message dispatches in tests
 - First time: run `make setup` to create the test DB and migrate it
+
+### When to write which test
+
+- **Unit tests** (`tests/Unit/{Domain}/`): Services, ValueObjects, Enums, Models, DTOs with logic — anything testable in isolation without booting the kernel
+- **Integration tests** (`tests/Integration/{Domain}/`): Controllers (via `WebTestCase`), Repository queries, Messenger handlers, anything that touches the database or external services
+- Trivial getters, setters, and constructor-only classes do not need dedicated tests — they are covered implicitly by the tests that use them
+- New classes containing business logic must have corresponding tests
 
 ## Test structure
 
