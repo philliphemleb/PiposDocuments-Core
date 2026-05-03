@@ -66,6 +66,29 @@ services:
     volumes:
       - redis_data:/data
 
+  messenger:
+    image: ${IMAGES_PREFIX:-}app-php-dev
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: >
+      sh -c 'php -d error_reporting=0 bin/console messenger:consume async --time-limit=31536000 || true'
+    healthcheck:
+      test: ["CMD-SHELL", "echo ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-localdevpassword}@database:5432/${POSTGRES_DB:-app}?serverVersion=${POSTGRES_VERSION:-17}&charset=${POSTGRES_CHARSET:-utf8}
+      REDIS_URL: redis://redis:6379
+      APP_ENV: ${APP_ENV:-dev}
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   caddy_data:
   caddy_config:
