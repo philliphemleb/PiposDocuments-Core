@@ -6,10 +6,7 @@ namespace App\Authentication\Controller;
 
 use App\Authentication\Controller\Input\RegisterInput;
 use App\Authentication\Enum\FailedResendReason;
-use App\Authentication\Exception\FailedRegistrationException;
-use App\Authentication\Exception\FailedResendException;
 use App\Authentication\Service\RegistrationService;
-use App\Authentication\Service\ResendVerificationEmailService;
 use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,15 +16,19 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class AuthenticationController extends AbstractController
 {
+    public function __construct(
+        private RegistrationService $registrationService,
+    ) {
+    }
+
     #[Route('/register', name: 'auth_register', methods: ['POST'])]
     public function register(
         #[MapRequestPayload]
         RegisterInput $input,
-        RegistrationService $registrationService,
     ): JsonResponse {
-        try {
-            $registrationService->register($input->email);
-        } catch (FailedRegistrationException) {
+        $result = $this->registrationService->register($input->email);
+
+        if (!$result->success) {
             return $this->json(['error' => 'Email not available.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -38,12 +39,11 @@ class AuthenticationController extends AbstractController
     public function resendVerificationEmail(
         #[MapRequestPayload]
         RegisterInput $input,
-        ResendVerificationEmailService $resendService,
     ): JsonResponse {
-        try {
-            $resendService->resend($input->email);
-        } catch (FailedResendException $failedResendException) {
-            $status = FailedResendReason::MaxAttemptsReached === $failedResendException->reason
+        $result = $this->registrationService->resendVerificationMail($input->email);
+
+        if (!$result->success && $result->reason instanceof FailedResendReason) {
+            $status = FailedResendReason::MaxAttemptsReached === $result->reason
                 ? Response::HTTP_TOO_MANY_REQUESTS
                 : Response::HTTP_UNPROCESSABLE_ENTITY;
 

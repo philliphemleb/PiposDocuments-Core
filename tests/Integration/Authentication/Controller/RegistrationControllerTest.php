@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Integration\Authentication\Controller;
 
 use App\Authentication\Entity\BannedIdentifier;
+use App\Authentication\Entity\EmailVerificationToken;
 use App\Authentication\Message\SendVerificationEmailMessage;
 use App\Authentication\Story\UserStory;
 use Doctrine\ORM\EntityManagerInterface;
@@ -38,6 +39,12 @@ final class RegistrationControllerTest extends WebTestCase
         $message = $messages[0] ?? self::fail('Expected a SendVerificationEmailMessage in the queue');
         self::assertSame('newuser@example.com', $message->email);
         self::assertNotEmpty($message->token);
+
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+        $token = $em->getRepository(EmailVerificationToken::class)->findOneByToken($message->token);
+        self::assertNotNull($token, 'Token should be persisted in the database');
+        self::assertNotNull($token->dispatchedAt, 'Token should be marked as dispatched');
+        self::assertSame(1, $token->sendAttempts);
     }
 
     #[Test]

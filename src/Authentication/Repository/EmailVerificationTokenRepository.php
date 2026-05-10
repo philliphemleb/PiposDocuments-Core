@@ -43,12 +43,13 @@ class EmailVerificationTokenRepository extends ServiceEntityRepository
     /**
      * @return list<EmailVerificationToken>
      */
-    public function findPendingDispatch(): array
+    public function findPendingDispatch(int $limit = 50): array
     {
         return $this->createQueryBuilder('t')
             ->where('t.dispatchedAt IS NULL')
             ->andWhere('t.expiresAt > :now')
             ->setParameter('now', CarbonImmutable::now())
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
     }
