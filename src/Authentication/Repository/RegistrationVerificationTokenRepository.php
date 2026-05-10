@@ -53,4 +53,39 @@ class RegistrationVerificationTokenRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function countSentTokensForUserSince(User $user, CarbonImmutable $since): int
+    {
+        /** @var int $count */
+        $count = $this->createQueryBuilder('t')
+            ->select('COUNT(t.id)')
+            ->where('t.user = :user')
+            ->andWhere('t.sentAt IS NOT NULL')
+            ->andWhere('t.createdAt >= :since')
+            ->setParameter('user', $user)
+            ->setParameter('since', $since)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $count;
+    }
+
+    public function deleteExpiredBatch(int $limit): int
+    {
+        /** @var list<RegistrationVerificationToken> $tokens */
+        $tokens = $this->createQueryBuilder('t')
+            ->where('t.expiresAt <= :now')
+            ->setParameter('now', CarbonImmutable::now())
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+
+        foreach ($tokens as $token) {
+            $this->getEntityManager()->remove($token);
+        }
+
+        $this->getEntityManager()->flush();
+
+        return \count($tokens);
+    }
 }

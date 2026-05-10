@@ -44,7 +44,6 @@ final class RegistrationControllerTest extends WebTestCase
         $token = $em->getRepository(RegistrationVerificationToken::class)->findOneByToken($message->token);
         self::assertNotNull($token, 'Token should be persisted in the database');
         self::assertNotNull($token->dispatchedAt, 'Token should be marked as dispatched');
-        self::assertSame(1, $token->sendAttempts);
     }
 
     #[Test]

@@ -17,7 +17,8 @@ readonly class RegistrationVerificationSchedule implements ScheduleProviderInter
     public function getSchedule(): Schedule
     {
         return new Schedule()->add(
-            RecurringMessage::every('15 minutes', new DispatchPendingRegistrationVerificationsTask()),
+            RecurringMessage::every('30 minutes', new DispatchPendingRegistrationVerificationsTask()),
+            RecurringMessage::cron('0 4 * * *', new CleanupExpiredRegistrationVerificationTokensTask()),
         );
     }
 }

@@ -26,7 +26,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 final readonly class RegistrationService
 {
     public const int VERIFICATION_TOKEN_EXPIRY_MINUTES = 60;
-    private const int MAX_RESEND_ATTEMPTS = 3;
+    private const int MAX_DAILY_TOKENS = 5;
 
     public function __construct(
         private EntityManagerInterface $em,
@@ -104,27 +104,37 @@ final readonly class RegistrationService
             return ResendResult::failed(FailedResendReason::UserNotEligible);
         }
 
-        $token = $this->tokenRepository->findValidTokenForUser($user);
+        $sentInLast24h = $this->tokenRepository->countSentTokensForUserSince(
+            $user,
+            CarbonImmutable::now()->subDay(),
+        );
 
-        if (!$token instanceof RegistrationVerificationToken) {
-            $this->logger->warning('Resend rejected: no valid token', [
-                'email' => $email,
-                'reason' => FailedResendReason::TokenExpired->name,
-            ]);
-
-            return ResendResult::failed(FailedResendReason::TokenExpired);
-        }
-
-        if ($token->sendAttempts >= self::MAX_RESEND_ATTEMPTS) {
-            $this->logger->warning('Resend rejected: max attempts reached', [
+        if ($sentInLast24h >= self::MAX_DAILY_TOKENS) {
+            $this->logger->warning('Resend rejected: max daily tokens reached', [
                 'email' => $email,
                 'reason' => FailedResendReason::MaxAttemptsReached->name,
+                'sent_count' => $sentInLast24h,
             ]);
 
             return ResendResult::failed(FailedResendReason::MaxAttemptsReached);
         }
 
-        $this->dispatchRegistrationVerification($user->email, $token);
+        $currentToken = $this->tokenRepository->findValidTokenForUser($user);
+
+        if ($currentToken instanceof RegistrationVerificationToken) {
+            $currentToken->invalidate();
+        }
+
+        $newToken = new RegistrationVerificationToken(
+            user: $user,
+            token: bin2hex(random_bytes(32)),
+            expiresAt: CarbonImmutable::now()->addMinutes(self::VERIFICATION_TOKEN_EXPIRY_MINUTES),
+        );
+
+        $this->em->persist($newToken);
+        $this->em->flush();
+
+        $this->dispatchRegistrationVerification($user->email, $newToken);
 
         return ResendResult::success();
     }
@@ -145,6 +155,21 @@ final readonly class RegistrationService
         return $results;
     }
 
+    /**
+     * @return int Number of expired tokens deleted
+     */
+    public function cleanupExpiredTokens(int $batchSize = 50): int
+    {
+        $totalDeleted = 0;
+
+        do {
+            $deleted = $this->tokenRepository->deleteExpiredBatch($batchSize);
+            $totalDeleted += $deleted;
+        } while ($deleted === $batchSize);
+
+        return $totalDeleted;
+    }
+
     private function dispatchRegistrationVerification(string $userEmail, RegistrationVerificationToken $token): void
     {
         try {
@@ -155,8 +180,6 @@ final readonly class RegistrationService
             ));
 
             $token->markAsDispatched();
-            $token->incrementSendAttempts();
-
             $this->em->flush();
 
             $this->logger->info('Registration verification dispatched', [

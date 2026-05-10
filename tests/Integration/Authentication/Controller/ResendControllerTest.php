@@ -88,35 +88,50 @@ final class ResendControllerTest extends WebTestCase
     }
 
     #[Test]
-    public function resendWithExpiredTokenReturns422(): void
+    public function resendInvalidatesOldTokenAndCreatesNewOne(): void
     {
         $client = self::createClient();
+        $em = self::getContainer()->get(EntityManagerInterface::class);
 
-        $user = UserStory::createOne([
-            'status' => UserStatus::UNVERIFIED_EMAIL,
-        ]);
+        $user = new User(email: 'invalidate@example.com', status: UserStatus::UNVERIFIED_EMAIL);
+        $em->persist($user);
 
-        RegistrationVerificationTokenStory::createOne([
-            'user' => $user,
-            'expiresAt' => CarbonImmutable::now()->subHour(),
-        ]);
+        $oldToken = new RegistrationVerificationToken(
+            user: $user,
+            token: 'old-test-token',
+            expiresAt: CarbonImmutable::now()->addHour(),
+        );
+        $em->persist($oldToken);
+        $em->flush();
 
         $client->request(
             method: 'POST',
             uri: '/api/resend-verification-email',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: (string) json_encode(['email' => $user->email]),
+            content: (string) json_encode(['email' => 'invalidate@example.com']),
         );
 
-        self::assertResponseStatusCodeSame(422);
-        $this->transport('async')->queue()->assertEmpty();
+        self::assertResponseStatusCodeSame(202);
+
+        $this->transport('async')
+            ->queue()
+            ->assertContains(SendRegistrationVerificationMessage::class, 1);
+
+        $messages = $this->transport('async')->queue()->messages(SendRegistrationVerificationMessage::class);
+        $message = $messages[0] ?? self::fail('Expected a message');
+
+        self::assertNotSame('old-test-token', $message->token, 'New token should be different from old');
+
+        $em->clear();
+        $refreshedOld = $em->find(RegistrationVerificationToken::class, $oldToken->id);
+        self::assertNotNull($refreshedOld?->expiresAt);
+        self::assertTrue($refreshedOld->expiresAt <= CarbonImmutable::now(), 'Old token should be invalidated');
     }
 
     #[Test]
-    public function resendWithMaxAttemptsReachedReturns429(): void
+    public function resendWithMaxDailyTokensReachedReturns429(): void
     {
         $client = self::createClient();
-
         $em = self::getContainer()->get(EntityManagerInterface::class);
 
         $user = new User(
@@ -124,25 +139,24 @@ final class ResendControllerTest extends WebTestCase
             status: UserStatus::UNVERIFIED_EMAIL,
         );
         $em->persist($user);
-        $em->flush();
 
-        $token = new RegistrationVerificationToken(
-            user: $user,
-            token: bin2hex(random_bytes(32)),
-            expiresAt: CarbonImmutable::now()->addHour(),
-        );
-        $token->markAsDispatched();
-        $token->incrementSendAttempts();
-        $token->incrementSendAttempts();
-        $token->incrementSendAttempts();
-        $em->persist($token);
+        for ($i = 0; 5 > $i; ++$i) {
+            $token = new RegistrationVerificationToken(
+                user: $user,
+                token: bin2hex(random_bytes(16)),
+                expiresAt: CarbonImmutable::now()->addHour(),
+            );
+            $token->markAsSent();
+            $em->persist($token);
+        }
+
         $em->flush();
 
         $client->request(
             method: 'POST',
             uri: '/api/resend-verification-email',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: (string) json_encode(['email' => $user->email]),
+            content: (string) json_encode(['email' => 'maxed@example.com']),
         );
 
         self::assertResponseStatusCodeSame(429);

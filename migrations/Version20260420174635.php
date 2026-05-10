@@ -27,7 +27,6 @@ final class Version20260420174635 extends AbstractMigration
                 created_at TIMESTAMP(6) WITHOUT TIME ZONE NOT NULL,
                 dispatched_at TIMESTAMP(6) WITHOUT TIME ZONE,
                 sent_at TIMESTAMP(6) WITHOUT TIME ZONE,
-                send_attempts INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY(id)
             )
             SQL);
