@@ -40,7 +40,7 @@ class AuthenticationController extends AbstractController
         #[MapRequestPayload]
         RegisterInput $input,
     ): JsonResponse {
-        $result = $this->registrationService->resendVerificationMail($input->email);
+        $result = $this->registrationService->resendRegistrationVerification($input->email);
 
         if (!$result->success && $result->reason instanceof FailedResendReason) {
             $status = FailedResendReason::MaxAttemptsReached === $result->reason

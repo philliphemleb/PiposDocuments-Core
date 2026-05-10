@@ -13,7 +13,7 @@ framework:
             failed: 'doctrine://default?queue_name=failed&auto_setup=0'
 
         routing:
-            App\Authentication\Message\SendVerificationEmailMessage: async
+            App\Authentication\Message\SendRegistrationVerificationMessage: async
 
 when@test:
     framework:

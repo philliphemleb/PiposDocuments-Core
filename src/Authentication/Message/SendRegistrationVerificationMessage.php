@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Authentication\Message;
 
-readonly class SendVerificationEmailMessage
+readonly class SendRegistrationVerificationMessage
 {
     public function __construct(
         public string $email,

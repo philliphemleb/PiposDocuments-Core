@@ -4,27 +4,27 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Authentication\Message;
 
-use App\Authentication\Entity\EmailVerificationToken;
+use App\Authentication\Entity\RegistrationVerificationToken;
 use App\Authentication\Entity\User;
-use App\Authentication\Message\SendVerificationEmailHandler;
-use App\Authentication\Message\SendVerificationEmailMessage;
+use App\Authentication\Message\SendRegistrationVerificationHandler;
+use App\Authentication\Message\SendRegistrationVerificationMessage;
 use Carbon\CarbonImmutable;
 use Override;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\FrameworkBundle\Test\MailerAssertionsTrait;
 
-final class SendVerificationEmailHandlerTest extends KernelTestCase
+final class SendRegistrationVerificationHandlerTest extends KernelTestCase
 {
     use MailerAssertionsTrait;
 
-    private SendVerificationEmailHandler $handler;
+    private SendRegistrationVerificationHandler $handler;
 
     #[Override]
     protected function setUp(): void
     {
         self::bootKernel();
-        $this->handler = self::getContainer()->get(SendVerificationEmailHandler::class);
+        $this->handler = self::getContainer()->get(SendRegistrationVerificationHandler::class);
     }
 
     #[Test]
@@ -35,7 +35,7 @@ final class SendVerificationEmailHandlerTest extends KernelTestCase
         $user = new User(email: 'verify@example.com');
         $em->persist($user);
 
-        $token = new EmailVerificationToken(
+        $token = new RegistrationVerificationToken(
             user: $user,
             token: 'abc123testtoken',
             expiresAt: CarbonImmutable::now()->addDay(),
@@ -43,7 +43,7 @@ final class SendVerificationEmailHandlerTest extends KernelTestCase
         $em->persist($token);
         $em->flush();
 
-        ($this->handler)(new SendVerificationEmailMessage(
+        ($this->handler)(new SendRegistrationVerificationMessage(
             email: 'verify@example.com',
             token: 'abc123testtoken',
             expiresInMinutes: 60,

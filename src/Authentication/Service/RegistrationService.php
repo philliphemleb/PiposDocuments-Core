@@ -7,14 +7,14 @@ namespace App\Authentication\Service;
 use App\Authentication\DTO\RegistrationResult;
 use App\Authentication\DTO\ResendResult;
 use App\Authentication\Entity\BannedIdentifier;
-use App\Authentication\Entity\EmailVerificationToken;
+use App\Authentication\Entity\RegistrationVerificationToken;
 use App\Authentication\Entity\User;
 use App\Authentication\Enum\FailedRegistrationReason;
 use App\Authentication\Enum\FailedResendReason;
 use App\Authentication\Enum\UserStatus;
-use App\Authentication\Message\SendVerificationEmailMessage;
+use App\Authentication\Message\SendRegistrationVerificationMessage;
 use App\Authentication\Repository\BannedIdentifierRepository;
-use App\Authentication\Repository\EmailVerificationTokenRepository;
+use App\Authentication\Repository\RegistrationVerificationTokenRepository;
 use App\Authentication\Repository\UserRepository;
 use Carbon\CarbonImmutable;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -33,7 +33,7 @@ final readonly class RegistrationService
         private MessageBusInterface $bus,
         private UserRepository $userRepository,
         private BannedIdentifierRepository $bannedIdentifierRepository,
-        private EmailVerificationTokenRepository $tokenRepository,
+        private RegistrationVerificationTokenRepository $tokenRepository,
         private LoggerInterface $logger,
     ) {
     }
@@ -72,7 +72,7 @@ final readonly class RegistrationService
             return RegistrationResult::failed(FailedRegistrationReason::EmailAlreadyRegistered);
         }
 
-        $token = new EmailVerificationToken(
+        $token = new RegistrationVerificationToken(
             user: $user,
             token: bin2hex(random_bytes(32)),
             expiresAt: CarbonImmutable::now()->addMinutes(self::VERIFICATION_TOKEN_EXPIRY_MINUTES),
@@ -81,7 +81,7 @@ final readonly class RegistrationService
         $this->em->persist($token);
         $this->em->flush();
 
-        $this->dispatchVerificationEmail($user->email, $token);
+        $this->dispatchRegistrationVerification($user->email, $token);
 
         $this->logger->info('User registered successfully', [
             'email' => $email,
@@ -91,7 +91,7 @@ final readonly class RegistrationService
         return RegistrationResult::success();
     }
 
-    public function resendVerificationMail(string $email): ResendResult
+    public function resendRegistrationVerification(string $email): ResendResult
     {
         $user = $this->userRepository->findOneByEmail($email);
 
@@ -106,7 +106,7 @@ final readonly class RegistrationService
 
         $token = $this->tokenRepository->findValidTokenForUser($user);
 
-        if (!$token instanceof EmailVerificationToken) {
+        if (!$token instanceof RegistrationVerificationToken) {
             $this->logger->warning('Resend rejected: no valid token', [
                 'email' => $email,
                 'reason' => FailedResendReason::TokenExpired->name,
@@ -124,7 +124,7 @@ final readonly class RegistrationService
             return ResendResult::failed(FailedResendReason::MaxAttemptsReached);
         }
 
-        $this->dispatchVerificationEmail($user->email, $token);
+        $this->dispatchRegistrationVerification($user->email, $token);
 
         return ResendResult::success();
     }
@@ -132,23 +132,23 @@ final readonly class RegistrationService
     /**
      * @return array<string, ResendResult>
      */
-    public function dispatchPendingEmails(int $limit = 50): array
+    public function dispatchPendingVerifications(int $limit = 50): array
     {
         $tokens = $this->tokenRepository->findPendingDispatch($limit);
         $results = [];
 
         foreach ($tokens as $token) {
-            $this->dispatchVerificationEmail($token->user->email, $token);
+            $this->dispatchRegistrationVerification($token->user->email, $token);
             $results[$token->user->email] = ResendResult::success();
         }
 
         return $results;
     }
 
-    private function dispatchVerificationEmail(string $userEmail, EmailVerificationToken $token): void
+    private function dispatchRegistrationVerification(string $userEmail, RegistrationVerificationToken $token): void
     {
         try {
-            $this->bus->dispatch(new SendVerificationEmailMessage(
+            $this->bus->dispatch(new SendRegistrationVerificationMessage(
                 email: $userEmail,
                 token: $token->token,
                 expiresInMinutes: self::VERIFICATION_TOKEN_EXPIRY_MINUTES,
@@ -159,11 +159,11 @@ final readonly class RegistrationService
 
             $this->em->flush();
 
-            $this->logger->info('Verification email dispatched', [
+            $this->logger->info('Registration verification dispatched', [
                 'email' => $userEmail,
             ]);
         } catch (TransportException $transportException) {
-            $this->logger->error('Failed to dispatch verification email; scheduler will retry', [
+            $this->logger->error('Failed to dispatch registration verification; scheduler will retry', [
                 'email' => $userEmail,
                 'exception' => $transportException->getMessage(),
             ]);

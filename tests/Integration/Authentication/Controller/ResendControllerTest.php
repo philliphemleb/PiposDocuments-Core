@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Authentication\Controller;
 
-use App\Authentication\Entity\EmailVerificationToken;
+use App\Authentication\Entity\RegistrationVerificationToken;
 use App\Authentication\Entity\User;
 use App\Authentication\Enum\UserStatus;
-use App\Authentication\Message\SendVerificationEmailMessage;
-use App\Authentication\Story\EmailVerificationTokenStory;
+use App\Authentication\Message\SendRegistrationVerificationMessage;
+use App\Authentication\Story\RegistrationVerificationTokenStory;
 use App\Authentication\Story\UserStory;
 use Carbon\CarbonImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -29,7 +29,7 @@ final class ResendControllerTest extends WebTestCase
             'status' => UserStatus::UNVERIFIED_EMAIL,
         ]);
 
-        EmailVerificationTokenStory::createOne([
+        RegistrationVerificationTokenStory::createOne([
             'user' => $user,
         ]);
 
@@ -44,7 +44,7 @@ final class ResendControllerTest extends WebTestCase
 
         $this->transport('async')
             ->queue()
-            ->assertContains(SendVerificationEmailMessage::class, 1);
+            ->assertContains(SendRegistrationVerificationMessage::class, 1);
     }
 
     #[Test]
@@ -72,7 +72,7 @@ final class ResendControllerTest extends WebTestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        EmailVerificationTokenStory::createOne([
+        RegistrationVerificationTokenStory::createOne([
             'user' => $user,
         ]);
 
@@ -96,7 +96,7 @@ final class ResendControllerTest extends WebTestCase
             'status' => UserStatus::UNVERIFIED_EMAIL,
         ]);
 
-        EmailVerificationTokenStory::createOne([
+        RegistrationVerificationTokenStory::createOne([
             'user' => $user,
             'expiresAt' => CarbonImmutable::now()->subHour(),
         ]);
@@ -126,7 +126,7 @@ final class ResendControllerTest extends WebTestCase
         $em->persist($user);
         $em->flush();
 
-        $token = new EmailVerificationToken(
+        $token = new RegistrationVerificationToken(
             user: $user,
             token: bin2hex(random_bytes(32)),
             expiresAt: CarbonImmutable::now()->addHour(),

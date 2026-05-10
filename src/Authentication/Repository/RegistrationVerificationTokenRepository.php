@@ -4,30 +4,30 @@ declare(strict_types=1);
 
 namespace App\Authentication\Repository;
 
-use App\Authentication\Entity\EmailVerificationToken;
+use App\Authentication\Entity\RegistrationVerificationToken;
 use App\Authentication\Entity\User;
 use Carbon\CarbonImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<EmailVerificationToken>
+ * @extends ServiceEntityRepository<RegistrationVerificationToken>
  */
-class EmailVerificationTokenRepository extends ServiceEntityRepository
+class RegistrationVerificationTokenRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, EmailVerificationToken::class);
+        parent::__construct($registry, RegistrationVerificationToken::class);
     }
 
-    public function findOneByToken(string $token): ?EmailVerificationToken
+    public function findOneByToken(string $token): ?RegistrationVerificationToken
     {
         return $this->findOneBy(['token' => $token]);
     }
 
-    public function findValidTokenForUser(User $user): ?EmailVerificationToken
+    public function findValidTokenForUser(User $user): ?RegistrationVerificationToken
     {
-        /** @var EmailVerificationToken|null $result */
+        /** @var RegistrationVerificationToken|null $result */
         $result = $this->createQueryBuilder('t')
             ->where('t.user = :user')
             ->andWhere('t.expiresAt > :now')
@@ -41,7 +41,7 @@ class EmailVerificationTokenRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return list<EmailVerificationToken>
+     * @return list<RegistrationVerificationToken>
      */
     public function findPendingDispatch(int $limit = 50): array
     {

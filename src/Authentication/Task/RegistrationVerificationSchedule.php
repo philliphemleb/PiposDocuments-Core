@@ -10,14 +10,14 @@ use Symfony\Component\Scheduler\RecurringMessage;
 use Symfony\Component\Scheduler\Schedule;
 use Symfony\Component\Scheduler\ScheduleProviderInterface;
 
-#[AsSchedule('verification_emails')]
-readonly class VerificationEmailSchedule implements ScheduleProviderInterface
+#[AsSchedule('registration_verifications')]
+readonly class RegistrationVerificationSchedule implements ScheduleProviderInterface
 {
     #[Override]
     public function getSchedule(): Schedule
     {
         return new Schedule()->add(
-            RecurringMessage::every('15 minutes', new DispatchPendingVerificationEmailsTask()),
+            RecurringMessage::every('15 minutes', new DispatchPendingRegistrationVerificationsTask()),
         );
     }
 }

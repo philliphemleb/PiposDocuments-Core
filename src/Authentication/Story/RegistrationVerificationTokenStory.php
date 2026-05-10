@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace App\Authentication\Story;
 
-use App\Authentication\Entity\EmailVerificationToken;
+use App\Authentication\Entity\RegistrationVerificationToken;
 use Carbon\CarbonImmutable;
 use Override;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 
 /**
- * @extends PersistentObjectFactory<EmailVerificationToken>
+ * @extends PersistentObjectFactory<RegistrationVerificationToken>
  */
-final class EmailVerificationTokenStory extends PersistentObjectFactory
+final class RegistrationVerificationTokenStory extends PersistentObjectFactory
 {
     #[Override]
     public static function class(): string
     {
-        return EmailVerificationToken::class;
+        return RegistrationVerificationToken::class;
     }
 
     #[Override]

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Authentication\Entity;
 
-use App\Authentication\Repository\EmailVerificationTokenRepository;
+use App\Authentication\Repository\RegistrationVerificationTokenRepository;
 use Carbon\CarbonImmutable;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 
-#[ORM\Entity(repositoryClass: EmailVerificationTokenRepository::class)]
-#[ORM\Table(name: 'email_verification_tokens')]
-class EmailVerificationToken
+#[ORM\Entity(repositoryClass: RegistrationVerificationTokenRepository::class)]
+#[ORM\Table(name: 'registration_verification_tokens')]
+class RegistrationVerificationToken
 {
     #[ORM\Id]
     #[ORM\Column(type: 'uuid')]
