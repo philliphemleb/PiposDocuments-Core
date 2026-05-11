@@ -41,3 +41,5 @@ jobs:
 
             Post inline comments on specific lines where you find issues.
             Be concise and constructive.
+        env:
+          GEMINI_CLI_TRUST_WORKSPACE: "true"
