@@ -24,6 +24,7 @@ jobs:
         uses: google-github-actions/run-gemini-cli@v0.1.22
         with:
           version: latest
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           prompt: |
             You are reviewing a pull request as a senior developer.
             First, read the CLAUDE.md file in the root of this repository carefully.
@@ -40,6 +41,3 @@ jobs:
 
             Post inline comments on specific lines where you find issues.
             Be concise and constructive.
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
