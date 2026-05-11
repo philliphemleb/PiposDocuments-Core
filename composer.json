@@ -1,8 +1,8 @@
 {
-    "name": "symfony/skeleton",
+    "name": "philliphemleb/piposdocuments-core",
     "type": "project",
-    "license": "MIT",
-    "description": "A minimal Symfony project recommended to create bare bones applications",
+    "license": "PolyForm-Noncommercial-1.0.0",
+    "description": "The core business logic project for PiposDocuments, a document and project-documentation management tool",
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
@@ -15,19 +15,30 @@
         "doctrine/orm": "^3.6.3",
         "lexik/jwt-authentication-bundle": "^3.2",
         "nesbot/carbon": "^3.11",
+        "phpdocumentor/reflection-docblock": "^6.0",
+        "phpstan/phpdoc-parser": "^2.3",
         "sentry/sentry-symfony": "^5.10",
         "symfony/console": "8.0.*",
         "symfony/doctrine-messenger": "8.0.*",
         "symfony/dotenv": "8.0.*",
         "symfony/flex": "^2.10",
         "symfony/framework-bundle": "8.0.*",
+        "symfony/mailer": "8.0.*",
         "symfony/messenger": "8.0.*",
+        "symfony/monolog-bundle": "^4.0",
+        "symfony/property-access": "8.0.*",
+        "symfony/property-info": "8.0.*",
         "symfony/redis-messenger": "8.0.*",
         "symfony/runtime": "8.0.*",
+        "symfony/scheduler": "8.0.*",
         "symfony/security-bundle": "8.0.*",
+        "symfony/serializer": "8.0.*",
+        "symfony/twig-bundle": "^8.0",
         "symfony/uid": "8.0.*",
         "symfony/validator": "8.0.*",
-        "symfony/yaml": "8.0.*"
+        "symfony/workflow": "8.0.*",
+        "symfony/yaml": "8.0.*",
+        "twig/twig": "^3.17"
     },
     "config": {
         "allow-plugins": {

@@ -2,10 +2,6 @@
 
 Symfony 8 backend for PiposDocuments. PHP 8.5, FrankenPHP, PostgreSQL 17, Doctrine ORM 3.
 
-## Tickets
-
-Tracked in Linear, prefix `PIP-`. Always check the relevant ticket before starting work.
-
 ## Running things
 
 **Always use `make` targets** — never invoke `docker compose`, `bin/console`, or `composer` directly on the host.
@@ -60,6 +56,7 @@ that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`)
 - **Static analysis**: PHPStan level max with extra strict rules in `phpstan.dist.neon`
 - **Native types over PHPDoc**: PHP 8.5 native types everywhere; PHPDoc only for generics like `array<int, Foo>`
 - After every code change, all three must pass: `make lint && make analyse && make test`
+- **Classes**: default to `final readonly class`, only change if extension is needed
 - Constructor property promotion with `readonly` for immutable data
 - PHP 8.5 enums for fixed value sets
 - Nullable types as `?T` (not `T|null`)
@@ -68,6 +65,7 @@ that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`)
 - Explicit boolean comparisons: `if (isset($var) === true)`
 - **Date/Time handling**: Always use `Carbon/CarbonImmutable` instead of `DateTimeImmutable`
 - **Entity IDs**: UUID v7 via Symfony UID component
+- **Property hooks (PHP 8.4)**: use `get`/`set` hooks on entity properties for type coercion and value normalisation. The `set` hook parameter may be wider than the property type (e.g. `string|UserStatus` on a `UserStatus` property) to accept raw input and convert it. Combine with asymmetric visibility (`public private(set)`) so the hook fires only from within the class. Example: `set(string|UserStatus $v) => $this->status = $v instanceof UserStatus ? $v : UserStatus::from($v);`
 
 ## Code Review Guidelines
 
@@ -75,13 +73,6 @@ that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`)
 - Symfony controllers must be thin — no direct Doctrine calls
 - Use constructor injection only, never container fetching
 - New API endpoints must be documented with API Platform attributes
-
-### When to write which test
-
-- **Unit tests** (`tests/Unit/{Domain}/`): Services, ValueObjects, Enums, Models, DTOs with logic — anything testable in isolation without booting the kernel
-- **Integration tests** (`tests/Integration/{Domain}/`): Controllers (via `WebTestCase`), Repository queries, Messenger handlers, anything that touches the database or external services
-- Trivial getters, setters, and constructor-only classes do not need dedicated tests — they are covered implicitly by the tests that use them
-- New classes containing business logic must have corresponding tests
 
 ## Composer / Symfony Flex
 
@@ -98,6 +89,17 @@ that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`)
 - Never put real credentials in `.env`. Use `.env.local` for local overrides, real environment variables for staging/prod
 - Always use `IF NOT EXISTS` and `IF EXISTS` in migrations
 - `messenger_messages` is owned by Symfony Messenger's Doctrine transport, not by an entity. It is excluded from ORM diffs via `schema_filter` in `config/packages/doctrine.yaml` and managed by a hand-written migration
+
+## Routing & API endpoints
+
+- All API routes are prefixed `/api` automatically via `config/routes.yaml` (`prefix: /api`). Controllers should use `#[Route('/foo')]`, **not** `#[Route('/api/foo')]` — Symfony adds the prefix
+- Public endpoints (no JWT required) must be added to `access_control` in `config/packages/security.yaml` **before** the catch-all `^/api` rule — otherwise the JWT firewall intercepts them
+- After adding a new route or controller, FrankenPHP worker mode requires:
+  ```bash
+  make sf c='cache:clear' && docker compose restart php
+  ```
+  Files are loaded once at worker startup; `cache:clear` alone isn't enough
+- Health check: `GET /api/health` → `{"status":"ok"}` (lives in `src/Infrastructure/Health/Controller/`)
 
 ## Secrets
 
@@ -123,6 +125,13 @@ that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`)
 - DDL statements inside a test (`ALTER TABLE`, `CREATE TABLE`, `TRUNCATE`, etc.) implicitly commit and break that isolation — avoid them, or opt the test out
 - Messenger tests use `Zenstruck\Messenger\Test\InteractsWithMessenger` — both `async` and `failed` transports are routed to the in-memory `test://` transport in the test environment, so Redis and Postgres are never touched by message dispatches in tests
 - First time: run `make setup` to create the test DB and migrate it
+
+### When to write which test
+
+- **Unit tests** (`tests/Unit/{Domain}/`): Services, ValueObjects, Enums, Models, DTOs with logic — anything testable in isolation without booting the kernel
+- **Integration tests** (`tests/Integration/{Domain}/`): Controllers (via `WebTestCase`), Repository queries, Messenger handlers, anything that touches the database or external services
+- Trivial getters, setters, and constructor-only classes do not need dedicated tests — they are covered implicitly by the tests that use them
+- New classes containing business logic must have corresponding tests
 
 ## Test structure
 
@@ -151,10 +160,4 @@ If PHPStan complains the container XML is missing, run `make sf c='cache:warmup 
 
 Tracked here so it doesn't get lost between sessions.
 
-- **Architecture enforcement (Deptrac or PHPat)** — currently deferred. The layer architecture in "Layer Architecture (per domain)" above is enforced only by convention. Once `src/` reaches **2+ domains** with real cross-domain boundaries, add one of:
-  - [Deptrac](https://github.com/qossmic/deptrac) — standalone analyzer, rules in `deptrac.yaml`, new CI step.
-  - [PHPat](https://github.com/carlosas/phpat) — PHPStan extension, rules in PHP, runs inside existing `make analyse` with zero new CI overhead.
-  PHPat is the cheaper path in; Deptrac is more mature. Decide when the need is real, not preemptively.
-- **Doctrine schema validator in CI** — currently commented out in `.github/workflows/ci.yaml` waiting for the first entity (PIP-27+). Re-enable as soon as one entity exists.
-- **HTTPS `/api` health check in CI** — same file, same trigger (first `/api` endpoint).
 - **Mutation testing (Infection)** — valuable but slow; add as a weekly scheduled workflow, not per-PR, once the test suite is substantial enough to make the signal worthwhile.

@@ -6,9 +6,11 @@ namespace App\Authentication\Enum;
 
 enum UserStatus: string
 {
+    case UNVERIFIED_EMAIL = 'unverified_email';
+    case TO_BE_VERIFIED_EMAIL = 'to_be_verified_email';
     case ACTIVE = 'active';
     case LOCKED = 'locked';
     case BANNED = 'banned';
-    case SHOULD_BE_UNLOCKED = 'should_be_unlocked';
-    case SHOULD_BE_DELETED = 'should_be_deleted';
+    case TO_BE_UNLOCKED = 'to_be_unlocked';
+    case TO_BE_DELETED = 'to_be_deleted';
 }

@@ -2,6 +2,21 @@
 
 Symfony 8 backend for PiposDocuments, running on FrankenPHP + PostgreSQL 17 via Docker.
 
+### License
+
+PiposDocuments is hosted in a public GitHub repository so that the
+source code can be viewed, studied, and modified.
+
+However, **commercial use is not allowed** for other people or companies.
+This includes:
+
+- Running `PiposDocuments` as a hosted service (SaaS).
+- Embedding it into a commercial product or website.
+- Using it in a commercial business offering, with or without a fee.
+
+If you want to use `PiposDocuments` in a commercial context,
+you must contact the project maintainer and obtain a separate commercial license.
+
 ## Requirements
 
 - [Docker](https://docs.docker.com/get-docker/) with Compose v2.10+
