@@ -6,6 +6,7 @@ namespace App\Authentication\Message;
 
 use App\Authentication\Entity\RegistrationVerificationToken;
 use App\Authentication\Repository\RegistrationVerificationTokenRepository;
+use Carbon\CarbonImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -36,7 +37,7 @@ final readonly class SendRegistrationVerificationHandler
         $token = $this->tokenRepository->findOneByToken($message->token);
 
         if (!$token instanceof RegistrationVerificationToken
-            || null !== $token->sentAt
+            || $token->sentAt instanceof CarbonImmutable
             || $token->expiresAt->isPast()
         ) {
             return;

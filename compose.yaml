@@ -73,7 +73,7 @@ services:
     volumes:
       - .:/app
     command: >
-      sh -c 'php -d error_reporting=0 bin/console messenger:consume async --time-limit=31536000 || true'
+      sh -c 'php -d error_reporting=0 bin/console messenger:consume async --time-limit=3600 --memory-limit=256M || true'
     healthcheck:
       test: ["CMD-SHELL", "grep -qa 'messenger:consume' /proc/1/cmdline"]
       interval: 30s
