@@ -16,6 +16,7 @@ security:
             jwt: ~
 
     access_control:
+        - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api/health, roles: PUBLIC_ACCESS }
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/register, roles: PUBLIC_ACCESS }

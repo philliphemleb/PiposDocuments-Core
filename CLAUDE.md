@@ -72,7 +72,7 @@ that compose per-domain ones (e.g. `AppStory` with `#[AsFixture(name: 'main')]`)
 - All business logic must live in Domain Services, never in Controllers
 - Symfony controllers must be thin — no direct Doctrine calls
 - Use constructor injection only, never container fetching
-- New API endpoints must be documented with API Platform attributes
+- New API endpoints must be documented with OpenAPI attributes (`#[OA\Get]`, `#[OA\Post]`, etc.) via NelmioApiDoc. API docs are available at `/api/docs` (Scalar UI) and `/api/docs.json` (raw OpenAPI spec)
 
 ## Composer / Symfony Flex
 
