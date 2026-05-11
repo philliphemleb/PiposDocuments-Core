@@ -62,6 +62,13 @@ final readonly class RegistrationService
         $user = new User(email: $email, status: UserStatus::UNVERIFIED_EMAIL);
         $this->em->persist($user);
 
+        $token = new RegistrationVerificationToken(
+            user: $user,
+            token: bin2hex(random_bytes(32)),
+            expiresAt: CarbonImmutable::now()->addMinutes(self::VERIFICATION_TOKEN_EXPIRY_MINUTES),
+        );
+        $this->em->persist($token);
+
         try {
             $this->em->flush();
         } catch (UniqueConstraintViolationException) {
@@ -72,15 +79,6 @@ final readonly class RegistrationService
 
             return RegistrationResult::failed(FailedRegistrationReason::EmailAlreadyRegistered);
         }
-
-        $token = new RegistrationVerificationToken(
-            user: $user,
-            token: bin2hex(random_bytes(32)),
-            expiresAt: CarbonImmutable::now()->addMinutes(self::VERIFICATION_TOKEN_EXPIRY_MINUTES),
-        );
-
-        $this->em->persist($token);
-        $this->em->flush();
 
         $this->dispatchRegistrationVerification($user->email, $token);
 
