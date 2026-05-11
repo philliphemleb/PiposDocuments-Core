@@ -133,19 +133,14 @@ jobs:
       - name: Check HTTP reachability
         run: curl -v --fail-with-body http://localhost
 
-      # TODO: enable when first /api endpoint exists (PIP-27+)
-      # - name: Check HTTPS reachability
-      #   run: curl -v --insecure --fail-with-body https://localhost/api
-
       - name: Check Mercure reachability
         run: curl -vI --insecure --fail-with-body https://localhost/.well-known/mercure?topic=test
 
-      - name: Set up test database
+      - name: Set up database
         run: make setup
 
-      # TODO: enable after first entity exists (PIP-27+) — fails with no mappings
-      # - name: Doctrine Schema Validator
-      #   run: docker compose exec -T php bin/console -e test doctrine:schema:validate
+      - name: Doctrine Schema Validator
+        run: docker compose exec -T php bin/console -e test doctrine:schema:validate
 
       - name: Run PHPUnit with Coverage
         id: phpunit

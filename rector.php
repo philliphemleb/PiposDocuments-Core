@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Rector\CodeQuality\Rector\Identical\SimplifyBoolIdenticalTrueRector;
 use Rector\Config\RectorConfig;
+use Rector\Php80\Rector\Class_\ClassPropertyAssignToConstructorPromotionRector;
 
 return RectorConfig::configure()
     ->withPaths([
@@ -19,6 +20,11 @@ return RectorConfig::configure()
         // like `isset($x) === true`. Rector's codeQuality set wants to
         // simplify these away — we want them kept.
         SimplifyBoolIdenticalTrueRector::class,
+        // Doctrine entities have ORM attributes on class properties — promoting
+        // them to constructor parameters strips the mapping and breaks hydration.
+        ClassPropertyAssignToConstructorPromotionRector::class => [
+            __DIR__ . '/src/*/Entity/*',
+        ],
     ])
     ->withCache(cacheDirectory: __DIR__ . '/var/.rector-cache')
     ->withPhpSets()
