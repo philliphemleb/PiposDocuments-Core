@@ -12,7 +12,7 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\Entity(repositoryClass: BannedIdentifierRepository::class)]
 #[ORM\Table(name: 'banned_identifiers')]
 #[ORM\HasLifecycleCallbacks]
-class BannedIdentifier
+final class BannedIdentifier
 {
     #[ORM\Id]
     #[ORM\Column(type: 'uuid')]
@@ -39,7 +39,7 @@ class BannedIdentifier
         ?CarbonImmutable $bannedAt = null,
     ) {
         $this->id = Uuid::v7();
-        $this->email = $email;
+        $this->email = mb_strtolower(trim($email));
         $this->reason = $reason;
         $this->bannedAt = $bannedAt ?? CarbonImmutable::now();
         $this->createdAt = CarbonImmutable::now();
