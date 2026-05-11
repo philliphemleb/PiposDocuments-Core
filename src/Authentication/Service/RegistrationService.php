@@ -180,14 +180,14 @@ final readonly class RegistrationService
     private function dispatchRegistrationVerification(string $userEmail, RegistrationVerificationToken $token): void
     {
         try {
+            $token->markAsDispatched();
+            $this->em->flush();
+
             $this->bus->dispatch(new SendRegistrationVerificationMessage(
                 email: $userEmail,
                 token: $token->token,
                 expiresInMinutes: self::VERIFICATION_TOKEN_EXPIRY_MINUTES,
             ));
-
-            $token->markAsDispatched();
-            $this->em->flush();
 
             $this->logger->info('Registration verification dispatched', [
                 'email' => $userEmail,
