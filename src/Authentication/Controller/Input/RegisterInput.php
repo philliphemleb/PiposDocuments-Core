@@ -6,7 +6,7 @@ namespace App\Authentication\Controller\Input;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-readonly class RegisterInput
+final readonly class RegisterInput
 {
     public function __construct(
         #[Assert\NotBlank]
