@@ -6,6 +6,7 @@ namespace App\Authentication\Repository;
 
 use App\Authentication\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -21,5 +22,18 @@ class UserRepository extends ServiceEntityRepository
     public function findOneByEmail(string $email): ?User
     {
         return $this->findOneBy(['email' => mb_strtolower(trim($email))]);
+    }
+
+    public function findOneByEmailForUpdate(string $email): ?User
+    {
+        /** @var User|null $result */
+        $result = $this->createQueryBuilder('u')
+            ->where('u.email = :email')
+            ->setParameter('email', mb_strtolower(trim($email)))
+            ->getQuery()
+            ->setLockMode(LockMode::PESSIMISTIC_WRITE)
+            ->getOneOrNullResult();
+
+        return $result;
     }
 }

@@ -92,50 +92,58 @@ final readonly class RegistrationService
 
     public function resendRegistrationVerification(string $email): ResendResult
     {
-        $user = $this->userRepository->findOneByEmail($email);
+        $newToken = null;
 
-        if (!$user instanceof User || UserStatus::UNVERIFIED_EMAIL !== $user->status) {
-            $this->logger->warning('Resend rejected: user not eligible', [
-                'email' => $email,
-                'reason' => FailedResendReason::UserNotEligible->name,
-            ]);
+        $result = $this->em->wrapInTransaction(function () use ($email, &$newToken): ResendResult {
+            $user = $this->userRepository->findOneByEmailForUpdate($email);
 
-            return ResendResult::failed(FailedResendReason::UserNotEligible);
+            if (!$user instanceof User || UserStatus::UNVERIFIED_EMAIL !== $user->status) {
+                $this->logger->warning('Resend rejected: user not eligible', [
+                    'email' => $email,
+                    'reason' => FailedResendReason::UserNotEligible->name,
+                ]);
+
+                return ResendResult::failed(FailedResendReason::UserNotEligible);
+            }
+
+            $sentInLast24h = $this->tokenRepository->countSentTokensForUserSince(
+                $user,
+                CarbonImmutable::now()->subDay(),
+            );
+
+            if ($sentInLast24h >= self::MAX_DAILY_TOKENS) {
+                $this->logger->warning('Resend rejected: max daily tokens reached', [
+                    'email' => $email,
+                    'reason' => FailedResendReason::MaxAttemptsReached->name,
+                    'sent_count' => $sentInLast24h,
+                ]);
+
+                return ResendResult::failed(FailedResendReason::MaxAttemptsReached);
+            }
+
+            $currentToken = $this->tokenRepository->findValidTokenForUser($user);
+
+            if ($currentToken instanceof RegistrationVerificationToken) {
+                $currentToken->invalidate();
+            }
+
+            $newToken = new RegistrationVerificationToken(
+                user: $user,
+                token: bin2hex(random_bytes(32)),
+                expiresAt: CarbonImmutable::now()->addMinutes(self::VERIFICATION_TOKEN_EXPIRY_MINUTES),
+            );
+
+            $this->em->persist($newToken);
+            $this->em->flush();
+
+            return ResendResult::success();
+        });
+
+        if ($result->success && $newToken instanceof RegistrationVerificationToken) {
+            $this->dispatchRegistrationVerification($newToken->user->email, $newToken);
         }
 
-        $sentInLast24h = $this->tokenRepository->countSentTokensForUserSince(
-            $user,
-            CarbonImmutable::now()->subDay(),
-        );
-
-        if ($sentInLast24h >= self::MAX_DAILY_TOKENS) {
-            $this->logger->warning('Resend rejected: max daily tokens reached', [
-                'email' => $email,
-                'reason' => FailedResendReason::MaxAttemptsReached->name,
-                'sent_count' => $sentInLast24h,
-            ]);
-
-            return ResendResult::failed(FailedResendReason::MaxAttemptsReached);
-        }
-
-        $currentToken = $this->tokenRepository->findValidTokenForUser($user);
-
-        if ($currentToken instanceof RegistrationVerificationToken) {
-            $currentToken->invalidate();
-        }
-
-        $newToken = new RegistrationVerificationToken(
-            user: $user,
-            token: bin2hex(random_bytes(32)),
-            expiresAt: CarbonImmutable::now()->addMinutes(self::VERIFICATION_TOKEN_EXPIRY_MINUTES),
-        );
-
-        $this->em->persist($newToken);
-        $this->em->flush();
-
-        $this->dispatchRegistrationVerification($user->email, $newToken);
-
-        return ResendResult::success();
+        return $result;
     }
 
     /**
