@@ -34,7 +34,10 @@ final readonly class SendRegistrationVerificationHandler
     {
         $token = $this->tokenRepository->findOneByToken($message->token);
 
-        if (!$token instanceof RegistrationVerificationToken) {
+        if (!$token instanceof RegistrationVerificationToken
+            || null !== $token->sentAt
+            || $token->expiresAt->isPast()
+        ) {
             return;
         }
 
