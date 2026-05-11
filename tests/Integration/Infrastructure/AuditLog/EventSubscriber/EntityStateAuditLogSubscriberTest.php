@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Infrastructure\AuditLog\EventSubscriber;
 
+use App\Authentication\Entity\BannedIdentifier;
 use App\Authentication\Entity\User;
 use App\Authentication\Enum\UserStatus;
 use App\Authentication\Story\UserStory;
-use App\Infrastructure\AuditLog\Entity\EntityStateAuditLog;
 use App\Infrastructure\AuditLog\Repository\EntityStateAuditLogRepository;
 use App\Infrastructure\AuditLog\Service\AuditLogContext;
 use Doctrine\ORM\EntityManagerInterface;
 use Override;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Workflow\WorkflowInterface;
 
 final class EntityStateAuditLogSubscriberTest extends KernelTestCase
@@ -112,21 +111,17 @@ final class EntityStateAuditLogSubscriberTest extends KernelTestCase
     #[Test]
     public function nonAuditableEntityDoesNotCreateAuditLog(): void
     {
-        $auditLog = new EntityStateAuditLog(
-            entityType: 'TestEntity',
-            entityId: Uuid::v7(),
-            oldState: 'old',
-            newState: 'new',
-            changedBy: 'test',
-            reason: 'test',
+        $bannedIdentifier = new BannedIdentifier(
+            email: 'banned@example.com',
+            reason: 'test ban',
         );
 
-        $this->em->persist($auditLog);
+        $this->em->persist($bannedIdentifier);
         $this->em->flush();
 
         $auditLogs = $this->auditLogRepository->findAll();
 
-        self::assertCount(1, $auditLogs);
+        self::assertCount(0, $auditLogs);
     }
 
     #[Test]
