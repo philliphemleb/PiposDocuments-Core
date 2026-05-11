@@ -164,6 +164,51 @@ final class ResendControllerTest extends WebTestCase
     }
 
     #[Test]
+    public function resendWithTokensCreatedBefore24hWindowButSentRecentlyStillRateLimits(): void
+    {
+        $client = self::createClient();
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+
+        $user = new User(
+            email: 'delayed-sent@example.com',
+            status: UserStatus::UNVERIFIED_EMAIL,
+        );
+        $em->persist($user);
+
+        try {
+            $twentyFiveHoursAgo = CarbonImmutable::now()->subHours(25);
+            $oneHourAgo = CarbonImmutable::now()->subHour();
+
+            for ($i = 0; 5 > $i; ++$i) {
+                CarbonImmutable::setTestNow($twentyFiveHoursAgo);
+                $token = new RegistrationVerificationToken(
+                    user: $user,
+                    token: bin2hex(random_bytes(16)),
+                    expiresAt: CarbonImmutable::now()->addHour(),
+                );
+                CarbonImmutable::setTestNow($oneHourAgo);
+                $token->markAsSent();
+                $em->persist($token);
+            }
+
+            CarbonImmutable::setTestNow();
+            $em->flush();
+
+            $client->request(
+                method: 'POST',
+                uri: '/api/resend-verification-email',
+                server: ['CONTENT_TYPE' => 'application/json'],
+                content: (string) json_encode(['email' => 'delayed-sent@example.com']),
+            );
+
+            self::assertResponseStatusCodeSame(429);
+            $this->transport('async')->queue()->assertEmpty();
+        } finally {
+            CarbonImmutable::setTestNow();
+        }
+    }
+
+    #[Test]
     public function resendWithInvalidEmailReturns422(): void
     {
         $client = self::createClient();

@@ -61,7 +61,7 @@ class RegistrationVerificationTokenRepository extends ServiceEntityRepository
             ->select('COUNT(t.id)')
             ->where('t.user = :user')
             ->andWhere('t.sentAt IS NOT NULL')
-            ->andWhere('t.createdAt >= :since')
+            ->andWhere('t.sentAt >= :since')
             ->setParameter('user', $user)
             ->setParameter('since', $since)
             ->getQuery()
