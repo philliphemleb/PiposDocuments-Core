@@ -75,7 +75,7 @@ services:
     command: >
       sh -c 'php -d error_reporting=0 bin/console messenger:consume async --time-limit=31536000 || true'
     healthcheck:
-      test: ["CMD-SHELL", "echo ok"]
+      test: ["CMD-SHELL", "pgrep -f 'messenger:consume async' >/dev/null"]
       interval: 30s
       timeout: 10s
       retries: 3
