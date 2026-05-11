@@ -43,7 +43,7 @@ final readonly class SendRegistrationVerificationHandler
 
         $this->logger->info('Sending registration verification email', [
             'email' => $message->email,
-            'token' => $message->token,
+            'token_id' => $token->id->toString(),
         ]);
 
         $email = $this->getEmailTemplate($message);
@@ -52,12 +52,12 @@ final readonly class SendRegistrationVerificationHandler
             $this->mailer->send($email);
             $this->logger->info('Registration verification email sent successfully', [
                 'email' => $message->email,
-                'token' => $message->token,
+                'token_id' => $token->id->toString(),
             ]);
         } catch (Throwable $throwable) {
             $this->logger->error('Failed to send registration verification email', [
                 'email' => $message->email,
-                'token' => $message->token,
+                'token_id' => $token->id->toString(),
                 'error' => $throwable->getMessage(),
             ]);
             throw new UnrecoverableMessageHandlingException(\sprintf('Failed to send registration verification email to %s: %s', $message->email, $throwable->getMessage()), (int) $throwable->getCode(), previous: $throwable);
