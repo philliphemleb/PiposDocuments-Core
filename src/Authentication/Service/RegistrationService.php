@@ -26,6 +26,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 final readonly class RegistrationService
 {
     public const int VERIFICATION_TOKEN_EXPIRY_MINUTES = 60;
+
     private const int MAX_DAILY_TOKENS = 5;
 
     public function __construct(

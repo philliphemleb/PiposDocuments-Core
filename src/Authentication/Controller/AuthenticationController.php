@@ -17,7 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class AuthenticationController extends AbstractController
 {
     public function __construct(
-        private RegistrationService $registrationService,
+        private readonly RegistrationService $registrationService,
     ) {
     }
 

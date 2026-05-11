@@ -22,6 +22,7 @@ final class DispatchPendingRegistrationVerificationsHandlerTest extends KernelTe
     use InteractsWithMessenger;
 
     private DispatchPendingRegistrationVerificationsHandler $handler;
+
     private EntityManagerInterface $em;
 
     #[Override]
@@ -69,6 +70,7 @@ final class DispatchPendingRegistrationVerificationsHandlerTest extends KernelTe
             expiresAt: CarbonImmutable::now()->addHour(),
         );
         $token->markAsDispatched();
+
         $this->em->persist($token);
         $this->em->flush();
 
