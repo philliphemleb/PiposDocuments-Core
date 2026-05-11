@@ -9,6 +9,7 @@ use App\Authentication\Repository\RegistrationVerificationTokenRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Mailer\Exception\TransportException;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
@@ -54,8 +55,15 @@ final readonly class SendRegistrationVerificationHandler
                 'email' => $message->email,
                 'token_id' => $token->id->toString(),
             ]);
+        } catch (TransportException $transportException) {
+            $this->logger->warning('Transient mailer failure, will retry', [
+                'email' => $message->email,
+                'token_id' => $token->id->toString(),
+                'error' => $transportException->getMessage(),
+            ]);
+            throw $transportException;
         } catch (Throwable $throwable) {
-            $this->logger->error('Failed to send registration verification email', [
+            $this->logger->error('Permanent mailer failure, not retrying', [
                 'email' => $message->email,
                 'token_id' => $token->id->toString(),
                 'error' => $throwable->getMessage(),
