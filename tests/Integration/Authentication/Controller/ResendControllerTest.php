@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Authentication\Controller;
 
-use App\Authentication\Entity\RegistrationVerificationToken;
 use App\Authentication\Entity\User;
+use App\Authentication\Entity\VerificationToken;
+use App\Authentication\Enum\TokenType;
 use App\Authentication\Enum\UserStatus;
-use App\Authentication\Message\SendRegistrationVerificationMessage;
-use App\Authentication\Story\RegistrationVerificationTokenStory;
+use App\Authentication\Message\SendVerificationTokenMessage;
 use App\Authentication\Story\UserStory;
+use App\Authentication\Story\VerificationTokenStory;
 use Carbon\CarbonImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,8 +30,9 @@ final class ResendControllerTest extends WebTestCase
             'status' => UserStatus::UNVERIFIED_EMAIL,
         ]);
 
-        RegistrationVerificationTokenStory::createOne([
+        VerificationTokenStory::createOne([
             'user' => $user,
+            'type' => TokenType::Registration,
         ]);
 
         $client->request(
@@ -44,7 +46,7 @@ final class ResendControllerTest extends WebTestCase
 
         $this->transport('async')
             ->queue()
-            ->assertContains(SendRegistrationVerificationMessage::class, 1);
+            ->assertContains(SendVerificationTokenMessage::class, 1);
     }
 
     #[Test]
@@ -72,8 +74,9 @@ final class ResendControllerTest extends WebTestCase
             'status' => UserStatus::ACTIVE,
         ]);
 
-        RegistrationVerificationTokenStory::createOne([
+        VerificationTokenStory::createOne([
             'user' => $user,
+            'type' => TokenType::Registration,
         ]);
 
         $client->request(
@@ -96,8 +99,9 @@ final class ResendControllerTest extends WebTestCase
         $user = new User(email: 'invalidate@example.com', status: UserStatus::UNVERIFIED_EMAIL);
         $em->persist($user);
 
-        $oldToken = new RegistrationVerificationToken(
+        $oldToken = new VerificationToken(
             user: $user,
+            type: TokenType::Registration,
             token: 'old-test-token',
             expiresAt: CarbonImmutable::now()->addHour(),
         );
@@ -115,15 +119,15 @@ final class ResendControllerTest extends WebTestCase
 
         $this->transport('async')
             ->queue()
-            ->assertContains(SendRegistrationVerificationMessage::class, 1);
+            ->assertContains(SendVerificationTokenMessage::class, 1);
 
-        $messages = $this->transport('async')->queue()->messages(SendRegistrationVerificationMessage::class);
+        $messages = $this->transport('async')->queue()->messages(SendVerificationTokenMessage::class);
         $message = $messages[0] ?? self::fail('Expected a message');
 
         self::assertNotSame('old-test-token', $message->token, 'New token should be different from old');
 
         $em->clear();
-        $refreshedOld = $em->find(RegistrationVerificationToken::class, $oldToken->id);
+        $refreshedOld = $em->find(VerificationToken::class, $oldToken->id);
         self::assertNotNull($refreshedOld?->expiresAt);
         self::assertTrue($refreshedOld->expiresAt <= CarbonImmutable::now(), 'Old token should be invalidated');
     }
@@ -141,8 +145,9 @@ final class ResendControllerTest extends WebTestCase
         $em->persist($user);
 
         for ($i = 0; 5 > $i; ++$i) {
-            $token = new RegistrationVerificationToken(
+            $token = new VerificationToken(
                 user: $user,
+                type: TokenType::Registration,
                 token: bin2hex(random_bytes(16)),
                 expiresAt: CarbonImmutable::now()->addHour(),
             );
@@ -181,8 +186,9 @@ final class ResendControllerTest extends WebTestCase
 
             for ($i = 0; 5 > $i; ++$i) {
                 CarbonImmutable::setTestNow($twentyFiveHoursAgo);
-                $token = new RegistrationVerificationToken(
+                $token = new VerificationToken(
                     user: $user,
+                    type: TokenType::Registration,
                     token: bin2hex(random_bytes(16)),
                     expiresAt: CarbonImmutable::now()->addHour(),
                 );

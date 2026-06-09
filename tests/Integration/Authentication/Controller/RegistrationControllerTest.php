@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Integration\Authentication\Controller;
 
 use App\Authentication\Entity\BannedIdentifier;
-use App\Authentication\Entity\RegistrationVerificationToken;
-use App\Authentication\Message\SendRegistrationVerificationMessage;
+use App\Authentication\Entity\VerificationToken;
+use App\Authentication\Message\SendVerificationTokenMessage;
 use App\Authentication\Story\UserStory;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -33,15 +33,15 @@ final class RegistrationControllerTest extends WebTestCase
 
         $this->transport('async')
             ->queue()
-            ->assertContains(SendRegistrationVerificationMessage::class, 1);
+            ->assertContains(SendVerificationTokenMessage::class, 1);
 
-        $messages = $this->transport('async')->queue()->messages(SendRegistrationVerificationMessage::class);
-        $message = $messages[0] ?? self::fail('Expected a SendRegistrationVerificationMessage in the queue');
+        $messages = $this->transport('async')->queue()->messages(SendVerificationTokenMessage::class);
+        $message = $messages[0] ?? self::fail('Expected a SendVerificationTokenMessage in the queue');
         self::assertSame('newuser@example.com', $message->email);
         self::assertNotEmpty($message->token);
 
         $em = self::getContainer()->get(EntityManagerInterface::class);
-        $token = $em->getRepository(RegistrationVerificationToken::class)->findOneByToken($message->token);
+        $token = $em->getRepository(VerificationToken::class)->findOneByToken($message->token);
         self::assertNotNull($token, 'Token should be persisted in the database');
         self::assertNotNull($token->dispatchedAt, 'Token should be marked as dispatched');
     }

@@ -4,30 +4,31 @@ declare(strict_types=1);
 
 namespace App\Authentication\Repository;
 
-use App\Authentication\Entity\RegistrationVerificationToken;
 use App\Authentication\Entity\User;
+use App\Authentication\Entity\VerificationToken;
+use App\Authentication\Enum\TokenType;
 use Carbon\CarbonImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<RegistrationVerificationToken>
+ * @extends ServiceEntityRepository<VerificationToken>
  */
-class RegistrationVerificationTokenRepository extends ServiceEntityRepository
+class VerificationTokenRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, RegistrationVerificationToken::class);
+        parent::__construct($registry, VerificationToken::class);
     }
 
-    public function findOneByToken(string $token): ?RegistrationVerificationToken
+    public function findOneByToken(string $token): ?VerificationToken
     {
         return $this->findOneBy(['token' => $token]);
     }
 
-    public function findValidTokenForUser(User $user): ?RegistrationVerificationToken
+    public function findValidTokenForUser(User $user): ?VerificationToken
     {
-        /** @var RegistrationVerificationToken|null $result */
+        /** @var VerificationToken|null $result */
         $result = $this->createQueryBuilder('t')
             ->where('t.user = :user')
             ->andWhere('t.expiresAt > :now')
@@ -40,8 +41,25 @@ class RegistrationVerificationTokenRepository extends ServiceEntityRepository
         return $result;
     }
 
+    public function findValidTokenForUserByType(User $user, TokenType $type): ?VerificationToken
+    {
+        /** @var VerificationToken|null $result */
+        $result = $this->createQueryBuilder('t')
+            ->where('t.user = :user')
+            ->andWhere('t.type = :type')
+            ->andWhere('t.expiresAt > :now')
+            ->setParameter('user', $user)
+            ->setParameter('type', $type)
+            ->setParameter('now', CarbonImmutable::now())
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $result;
+    }
+
     /**
-     * @return list<RegistrationVerificationToken>
+     * @return list<VerificationToken>
      */
     public function findPendingDispatch(int $limit = 50): array
     {
@@ -72,7 +90,7 @@ class RegistrationVerificationTokenRepository extends ServiceEntityRepository
 
     public function deleteExpiredBatch(int $limit): int
     {
-        /** @var list<RegistrationVerificationToken> $tokens */
+        /** @var list<VerificationToken> $tokens */
         $tokens = $this->createQueryBuilder('t')
             ->where('t.expiresAt <= :now')
             ->setParameter('now', CarbonImmutable::now())
