@@ -54,11 +54,7 @@ final class Version20260420174635 extends AbstractMigration
     public function down(Schema $schema): void
     {
         $this->addSql(<<<'SQL'
-            ALTER TABLE IF EXISTS verification_tokens DROP CONSTRAINT IF EXISTS FK_989436E4A76ED395
-            SQL);
-
-        $this->addSql(<<<'SQL'
-            DROP TABLE IF EXISTS verification_tokens
+            DROP TABLE IF EXISTS verification_tokens CASCADE
             SQL);
     }
 }
