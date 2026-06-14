@@ -10,7 +10,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]
-readonly class DispatchPendingRegistrationVerificationsHandler
+readonly class DispatchPendingVerificationTokensHandler
 {
     private const int BATCH_SIZE = 50;
 
@@ -20,7 +20,7 @@ readonly class DispatchPendingRegistrationVerificationsHandler
     ) {
     }
 
-    public function __invoke(DispatchPendingRegistrationVerificationsTask $task): void
+    public function __invoke(DispatchPendingVerificationTokensTask $task): void
     {
         do {
             $results = $this->registrationService->dispatchPendingVerifications(self::BATCH_SIZE);
@@ -28,7 +28,7 @@ readonly class DispatchPendingRegistrationVerificationsHandler
 
             foreach ($results as $email => $result) {
                 if (!$result->success && $result->reason instanceof FailedResendReason) {
-                    $this->logger->warning('Scheduler: pending registration verification dispatch failed', [
+                    $this->logger->warning('Scheduler: pending verification token dispatch failed', [
                         'email' => $email,
                         'reason' => $result->reason->name,
                     ]);
@@ -37,7 +37,7 @@ readonly class DispatchPendingRegistrationVerificationsHandler
         } while (self::BATCH_SIZE === $count);
 
         if ($count > 0) {
-            $this->logger->info('Scheduler: processed pending registration verifications', [
+            $this->logger->info('Scheduler: processed pending verification tokens', [
                 'count' => $count,
             ]);
         }

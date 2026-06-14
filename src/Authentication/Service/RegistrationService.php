@@ -7,15 +7,16 @@ namespace App\Authentication\Service;
 use App\Authentication\DTO\RegistrationResult;
 use App\Authentication\DTO\ResendResult;
 use App\Authentication\Entity\BannedIdentifier;
-use App\Authentication\Entity\RegistrationVerificationToken;
 use App\Authentication\Entity\User;
+use App\Authentication\Entity\VerificationToken;
 use App\Authentication\Enum\FailedRegistrationReason;
 use App\Authentication\Enum\FailedResendReason;
+use App\Authentication\Enum\TokenType;
 use App\Authentication\Enum\UserStatus;
-use App\Authentication\Message\SendRegistrationVerificationMessage;
+use App\Authentication\Message\SendVerificationTokenMessage;
 use App\Authentication\Repository\BannedIdentifierRepository;
-use App\Authentication\Repository\RegistrationVerificationTokenRepository;
 use App\Authentication\Repository\UserRepository;
+use App\Authentication\Repository\VerificationTokenRepository;
 use Carbon\CarbonImmutable;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -25,8 +26,6 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final readonly class RegistrationService
 {
-    public const int VERIFICATION_TOKEN_EXPIRY_MINUTES = 60;
-
     private const int MAX_DAILY_TOKENS = 5;
 
     public function __construct(
@@ -34,7 +33,8 @@ final readonly class RegistrationService
         private MessageBusInterface $bus,
         private UserRepository $userRepository,
         private BannedIdentifierRepository $bannedIdentifierRepository,
-        private RegistrationVerificationTokenRepository $tokenRepository,
+        private VerificationTokenRepository $tokenRepository,
+        private VerificationTokenService $tokenService,
         private LoggerInterface $logger,
     ) {
     }
@@ -62,11 +62,7 @@ final readonly class RegistrationService
         $user = new User(email: $email, status: UserStatus::UNVERIFIED_EMAIL);
         $this->em->persist($user);
 
-        $token = new RegistrationVerificationToken(
-            user: $user,
-            token: bin2hex(random_bytes(32)),
-            expiresAt: CarbonImmutable::now()->addMinutes(self::VERIFICATION_TOKEN_EXPIRY_MINUTES),
-        );
+        $token = $this->tokenService->createRegistrationToken($user);
         $this->em->persist($token);
 
         try {
@@ -80,7 +76,7 @@ final readonly class RegistrationService
             return RegistrationResult::failed(FailedRegistrationReason::EmailAlreadyRegistered);
         }
 
-        $this->dispatchRegistrationVerification($user->email, $token);
+        $this->dispatchVerificationToken($user->email, $token);
 
         $this->logger->info('User registered successfully', [
             'email' => $email,
@@ -121,26 +117,17 @@ final readonly class RegistrationService
                 return ResendResult::failed(FailedResendReason::MaxAttemptsReached);
             }
 
-            $currentToken = $this->tokenRepository->findValidTokenForUser($user);
+            $this->tokenService->invalidateExistingForUser($user, TokenType::Registration);
 
-            if ($currentToken instanceof RegistrationVerificationToken) {
-                $currentToken->invalidate();
-            }
-
-            $newToken = new RegistrationVerificationToken(
-                user: $user,
-                token: bin2hex(random_bytes(32)),
-                expiresAt: CarbonImmutable::now()->addMinutes(self::VERIFICATION_TOKEN_EXPIRY_MINUTES),
-            );
-
+            $newToken = $this->tokenService->createRegistrationToken($user);
             $this->em->persist($newToken);
             $this->em->flush();
 
             return ResendResult::success();
         });
 
-        if ($result->success && $newToken instanceof RegistrationVerificationToken) {
-            $this->dispatchRegistrationVerification($newToken->user->email, $newToken);
+        if ($result->success && $newToken instanceof VerificationToken) {
+            $this->dispatchVerificationToken($newToken->user->email, $newToken);
         }
 
         return $result;
@@ -155,7 +142,7 @@ final readonly class RegistrationService
         $results = [];
 
         foreach ($tokens as $token) {
-            $this->dispatchRegistrationVerification($token->user->email, $token);
+            $this->dispatchVerificationToken($token->user->email, $token);
             $results[$token->user->email] = ResendResult::success();
         }
 
@@ -177,23 +164,24 @@ final readonly class RegistrationService
         return $totalDeleted;
     }
 
-    private function dispatchRegistrationVerification(string $userEmail, RegistrationVerificationToken $token): void
+    private function dispatchVerificationToken(string $userEmail, VerificationToken $token): void
     {
         try {
             $token->markAsDispatched();
             $this->em->flush();
 
-            $this->bus->dispatch(new SendRegistrationVerificationMessage(
+            $this->bus->dispatch(new SendVerificationTokenMessage(
                 email: $userEmail,
                 token: $token->token,
-                expiresInMinutes: self::VERIFICATION_TOKEN_EXPIRY_MINUTES,
+                expiresInMinutes: VerificationTokenService::REGISTRATION_TOKEN_EXPIRY_MINUTES,
             ));
 
-            $this->logger->info('Registration verification dispatched', [
+            $this->logger->info('Verification token dispatched', [
                 'email' => $userEmail,
+                'token_type' => $token->type->name,
             ]);
         } catch (TransportException $transportException) {
-            $this->logger->error('Failed to dispatch registration verification; scheduler will retry', [
+            $this->logger->error('Failed to dispatch verification token; scheduler will retry', [
                 'email' => $userEmail,
                 'exception' => $transportException->getMessage(),
             ]);

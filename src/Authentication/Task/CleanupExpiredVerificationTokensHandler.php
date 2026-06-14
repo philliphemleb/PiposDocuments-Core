@@ -9,7 +9,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]
-readonly class CleanupExpiredRegistrationVerificationTokensHandler
+readonly class CleanupExpiredVerificationTokensHandler
 {
     private const int BATCH_SIZE = 50;
 
@@ -19,12 +19,12 @@ readonly class CleanupExpiredRegistrationVerificationTokensHandler
     ) {
     }
 
-    public function __invoke(CleanupExpiredRegistrationVerificationTokensTask $task): void
+    public function __invoke(CleanupExpiredVerificationTokensTask $task): void
     {
         $deleted = $this->registrationService->cleanupExpiredTokens(self::BATCH_SIZE);
 
         if ($deleted > 0) {
-            $this->logger->info('Cleaned up expired registration verification tokens', [
+            $this->logger->info('Cleaned up expired verification tokens', [
                 'deleted' => $deleted,
             ]);
         }

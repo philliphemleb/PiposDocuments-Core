@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace App\Authentication\Story;
 
-use App\Authentication\Entity\RegistrationVerificationToken;
+use App\Authentication\Entity\VerificationToken;
+use App\Authentication\Enum\TokenType;
 use Carbon\CarbonImmutable;
 use Override;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 
 /**
- * @extends PersistentObjectFactory<RegistrationVerificationToken>
+ * @extends PersistentObjectFactory<VerificationToken>
  */
-final class RegistrationVerificationTokenStory extends PersistentObjectFactory
+final class VerificationTokenStory extends PersistentObjectFactory
 {
     #[Override]
     public static function class(): string
     {
-        return RegistrationVerificationToken::class;
+        return VerificationToken::class;
     }
 
     #[Override]
@@ -25,6 +26,7 @@ final class RegistrationVerificationTokenStory extends PersistentObjectFactory
     {
         return [
             'user' => UserStory::new(),
+            'type' => TokenType::Registration,
             'token' => bin2hex(random_bytes(32)),
             'expiresAt' => CarbonImmutable::now()->addHour(),
         ];

@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Authentication\Entity;
 
-use App\Authentication\Repository\RegistrationVerificationTokenRepository;
+use App\Authentication\Enum\TokenType;
+use App\Authentication\Repository\VerificationTokenRepository;
 use Carbon\CarbonImmutable;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 
-#[ORM\Entity(repositoryClass: RegistrationVerificationTokenRepository::class)]
-#[ORM\Table(name: 'registration_verification_tokens')]
-class RegistrationVerificationToken
+#[ORM\Entity(repositoryClass: VerificationTokenRepository::class)]
+#[ORM\Table(name: 'verification_tokens')]
+class VerificationToken
 {
     #[ORM\Id]
     #[ORM\Column(type: 'uuid')]
@@ -20,6 +21,9 @@ class RegistrationVerificationToken
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     public private(set) User $user;
+
+    #[ORM\Column(type: 'string', enumType: TokenType::class)]
+    public private(set) TokenType $type;
 
     #[ORM\Column(length: 64, unique: true)]
     public private(set) string $token;
@@ -38,11 +42,13 @@ class RegistrationVerificationToken
 
     public function __construct(
         User $user,
+        TokenType $type,
         string $token,
         CarbonImmutable $expiresAt,
     ) {
         $this->id = Uuid::v7();
         $this->user = $user;
+        $this->type = $type;
         $this->token = $token;
         $this->expiresAt = $expiresAt;
         $this->createdAt = CarbonImmutable::now();

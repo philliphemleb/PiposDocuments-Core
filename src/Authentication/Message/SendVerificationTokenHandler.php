@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Authentication\Message;
 
-use App\Authentication\Entity\RegistrationVerificationToken;
-use App\Authentication\Repository\RegistrationVerificationTokenRepository;
+use App\Authentication\Entity\VerificationToken;
+use App\Authentication\Repository\VerificationTokenRepository;
 use Carbon\CarbonImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -19,40 +19,41 @@ use Throwable;
 use Twig\Environment;
 
 #[AsMessageHandler]
-final readonly class SendRegistrationVerificationHandler
+final readonly class SendVerificationTokenHandler
 {
     public function __construct(
         private MailerInterface $mailer,
         #[Autowire('%env(APP_URL)%')]
         private string $appUrl,
-        private RegistrationVerificationTokenRepository $tokenRepository,
+        private VerificationTokenRepository $tokenRepository,
         private EntityManagerInterface $em,
         private Environment $twig,
         private LoggerInterface $logger,
     ) {
     }
 
-    public function __invoke(SendRegistrationVerificationMessage $message): void
+    public function __invoke(SendVerificationTokenMessage $message): void
     {
         $token = $this->tokenRepository->findOneByToken($message->token);
 
-        if (!$token instanceof RegistrationVerificationToken
+        if (!$token instanceof VerificationToken
             || $token->sentAt instanceof CarbonImmutable
             || $token->expiresAt->isPast()
         ) {
             return;
         }
 
-        $this->logger->info('Sending registration verification email', [
+        $this->logger->info('Sending verification email', [
             'email' => $message->email,
             'token_id' => $token->id->toString(),
+            'token_type' => $token->type->name,
         ]);
 
         $email = $this->getEmailTemplate($message);
 
         try {
             $this->mailer->send($email);
-            $this->logger->info('Registration verification email sent successfully', [
+            $this->logger->info('Verification email sent successfully', [
                 'email' => $message->email,
                 'token_id' => $token->id->toString(),
             ]);
@@ -69,14 +70,14 @@ final readonly class SendRegistrationVerificationHandler
                 'token_id' => $token->id->toString(),
                 'error' => $throwable->getMessage(),
             ]);
-            throw new UnrecoverableMessageHandlingException(\sprintf('Failed to send registration verification email to %s: %s', $message->email, $throwable->getMessage()), (int) $throwable->getCode(), previous: $throwable);
+            throw new UnrecoverableMessageHandlingException(\sprintf('Failed to send verification email to %s: %s', $message->email, $throwable->getMessage()), (int) $throwable->getCode(), previous: $throwable);
         }
 
         $token->markAsSent();
         $this->em->flush();
     }
 
-    private function getEmailTemplate(SendRegistrationVerificationMessage $message): Email
+    private function getEmailTemplate(SendVerificationTokenMessage $message): Email
     {
         $expiryText = match (true) {
             $message->expiresInMinutes >= 60 && 0 === $message->expiresInMinutes % 60 => \sprintf('%d hour(s)', $message->expiresInMinutes / 60),
