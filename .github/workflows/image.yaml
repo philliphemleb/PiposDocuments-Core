@@ -30,7 +30,7 @@ jobs:
       github.event.workflow_run.head_branch == 'main'
     steps:
       - name: Checkout triggering commit
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.3
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           persist-credentials: false
@@ -78,7 +78,7 @@ jobs:
       github.event.workflow_run.event == 'release'
     steps:
       - name: Checkout triggering commit
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.3
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           persist-credentials: false
